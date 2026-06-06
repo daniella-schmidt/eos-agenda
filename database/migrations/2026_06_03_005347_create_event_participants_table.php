@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('event_participants', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('eventId')->constrained('events')->cascadeOnDelete();
+            $table->foreignId('contactId')->nullable()->constrained('contacts')->nullOnDelete();
+            $table->string('name');
+            $table->string('email');
+            $table->string('role');
+            $table->string('responseStatus')->default('pending');
+            $table->timestamp('createAt')->nullable();
         });
     }
 

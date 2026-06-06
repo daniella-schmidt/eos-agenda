@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('contacts', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('userId')->constrained('users')->cascadeOnDelete();
+            $table->string('name');
+            $table->string('email');
+            $table->string('phone');
+            $table->boolean('company')->default(false);
+            $table->text('notes')->nullable();
+            $table->timestamp('createdAt')->nullable();
+            $table->timestamp('updatedAt')->nullable();
         });
     }
 

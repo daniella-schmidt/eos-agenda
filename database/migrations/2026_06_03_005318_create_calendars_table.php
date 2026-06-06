@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('calendars', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('userId')->constrained('users')->cascadeOnDelete();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->string('color')->nullable();
+            $table->boolean('isDefault')->default(false);
+            $table->boolean('isActive')->default(true);
+            $table->timestamp('createdAt')->nullable();
+            $table->timestamp('updatedAt')->nullable();
         });
     }
 

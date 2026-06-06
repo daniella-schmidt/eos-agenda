@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('event_reminders', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('eventId')->constrained('events')->cascadeOnDelete();
+            $table->string('type')->default('notification');
+            $table->unsignedInteger('minutesBefore');
+            $table->boolean('isSent')->default(false);
+            $table->timestamp('sentAt')->nullable();
+            $table->timestamp('createAt')->nullable();
         });
     }
 

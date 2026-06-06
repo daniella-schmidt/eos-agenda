@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('event_suggestions', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('userId')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('smartRequesId')->constrained('smart_requests')->cascadeOnDelete();
+            $table->timestamp('suggested_start_at');
+            $table->timestamp('suggested_end_at');
+            $table->decimal('score', 8, 2);
+            $table->text('reason');
+            $table->boolean('selected')->default(false);
+            $table->timestamp('createdAt')->nullable();
         });
     }
 
