@@ -14,9 +14,24 @@ use App\Services\SmartRequest\GetSmartRequestsByStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class SmartRequestController extends Controller
 {
+
+    public function update(Request $request, SmartRequest $smartRequest)
+    {
+        Gate::authorize('update', $smartRequest);
+        $validated = $request->validate([
+            'extractedTitle' => 'nullable|string',
+            'extractedDescription' => 'nullable|string',
+            'extractedStartAt' => 'nullable|date',
+            'extractedEndAt' => 'nullable|date',
+            'extractedParticipants' => 'nullable|array',
+        ]);
+        $smartRequest->update($validated);
+        return response()->json(['data' => $smartRequest]);
+    }
     public function byStatus(
         Request $request,
         SmartRequestStatus $status,

@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('userId')->constrained('users')->cascadeOnDelete();
             $table->foreignId('smartRequesId')->constrained('smart_requests')->cascadeOnDelete();
-            $table->timestamp('suggested_start_at');
-            $table->timestamp('suggested_end_at');
+            $table->timestamp('suggested_start_at')->nullable(); // adicione nullable()
+$table->timestamp('suggested_end_at')->nullable();   // adicione nullable()
             $table->decimal('score', 8, 2);
             $table->text('reason');
             $table->boolean('selected')->default(false);

@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignId('smartRequestId')->nullable()->constrained('smart_requests')->nullOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->timestamp('startAt');
-            $table->timestamp('endAt');
+            $table->timestamp('startAt')->nullable();
+            $table->timestamp('endAt')->nullable();
             $table->string('timezone');
             $table->text('location')->nullable();
             $table->string('meetingURL')->nullable();

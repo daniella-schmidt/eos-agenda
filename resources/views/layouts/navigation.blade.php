@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                       <div style="color: #008f91;font-weight:bolder;font-size:1.4rem">EO<span style="color:#ff6bb3;font-weight:bolder;font-size:1.4rem">S</span></div>
                     </a>
                 </div>
 
@@ -16,6 +16,15 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+
+                <!-- Dentro do menu principal -->
+                <x-nav-link :href="route('calendars.index')" :active="request()->routeIs('calendars.*')">
+                    {{ __('Calendários') }}
+                </x-nav-link>
+
+                <x-nav-link :href="route('smart-requests.index')" :active="request()->routeIs('smart-requests.*')">
+                    {{ __('Smart Requests') }}
+                </x-nav-link>
             </div>
 
             <!-- Settings Dropdown -->
