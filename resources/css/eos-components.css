@@ -1,0 +1,197 @@
+/* ── EOS DESIGN TOKENS (já definidos no app.blade.php, mas repetimos por segurança) ── */
+:root {
+    --teal:    #008f91;
+    --teal-m:  #00c1c4;
+    --teal-l:  #ccfeff;
+    --teal-xl: #e5ffff;
+    --pink:    #ff6bb3;
+    --orange:  #ffb76b;
+    --sun:     #ffe14d;
+    --dark:    #0d2b2b;
+    --white:   #ffffff;
+    --radius:  20px;
+    --border:  3px solid var(--dark);
+    --shadow:  5px 5px 0 var(--dark);
+}
+
+/* Botões */
+.eos-btn {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: .9rem;
+    padding: 10px 22px;
+    border-radius: 50px;
+    cursor: pointer;
+    border: var(--border);
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+.eos-btn--primary {
+    background: var(--teal);
+    color: var(--white);
+    box-shadow: var(--shadow);
+}
+.eos-btn--primary:hover {
+    transform: translate(-2px,-2px);
+    box-shadow: 7px 7px 0 var(--dark);
+}
+.eos-btn--ghost {
+    background: var(--white);
+    color: var(--dark);
+    box-shadow: 3px 3px 0 var(--dark);
+}
+.eos-btn--ghost:hover {
+    background: var(--teal-l);
+    transform: translate(-2px,-2px);
+}
+.eos-btn--danger {
+    background: #fff0f0;
+    color: #c0392b;
+    border-color: #c0392b;
+    box-shadow: 3px 3px 0 #c0392b;
+}
+.eos-btn--danger:hover {
+    background: #ffe0e0;
+    transform: translate(-1px,-1px);
+}
+.eos-btn--success {
+    background: #e6fff5;
+    color: #16a34a;
+    border-color: #16a34a;
+    box-shadow: 3px 3px 0 #16a34a;
+}
+.eos-btn--success:hover {
+    background: #d0ffe8;
+    transform: translate(-1px,-1px);
+}
+.eos-btn--sm {
+    padding: 6px 14px;
+    font-size: .78rem;
+}
+
+/* Toast */
+#eos-toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+.toast-item {
+    font-weight: 800;
+    font-size: .88rem;
+    padding: 12px 20px;
+    border-radius: 14px;
+    border: var(--border);
+    box-shadow: var(--shadow);
+    color: var(--dark);
+    animation: toastIn .25s ease both;
+    pointer-events: all;
+}
+.toast-item--success { background: var(--teal-l); }
+.toast-item--error   { background: #fff0f0; }
+.toast-item--info    { background: var(--sun); }
+@keyframes toastIn {
+    from { opacity:0; transform:translateY(-10px) scale(.94); }
+    to   { opacity:1; transform:none; }
+}
+
+/* Modal backdrop */
+.eos-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(13,43,43,.55);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    padding: 20px;
+}
+.eos-modal-backdrop.open { display: flex; }
+.eos-modal {
+    background: var(--white);
+    border: var(--border);
+    border-radius: var(--radius);
+    box-shadow: 10px 10px 0 var(--dark);
+    width: 100%;
+    max-width: 520px;
+    animation: modalIn .22s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes modalIn {
+    from { opacity:0; transform:scale(.9) translateY(16px); }
+    to   { opacity:1; transform:none; }
+}
+.eos-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 0;
+}
+.eos-modal__title {
+    font-size: 1.3rem;
+    color: var(--dark);
+}
+.eos-modal__close {
+    background: var(--teal-l);
+    border: var(--border);
+    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: .15s;
+}
+.eos-modal__close:hover {
+    background: #ffe0e0;
+    border-color: #c0392b;
+}
+.eos-modal__body { padding: 20px 24px 24px; }
+.eos-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 8px;
+}
+
+/* Campos de formulário */
+.eos-field { margin-bottom: 16px; }
+.eos-field label {
+    display: block;
+    font-weight: 900;
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--teal);
+    margin-bottom: 6px;
+}
+.eos-field input[type="text"],
+.eos-field input[type="datetime-local"],
+.eos-field textarea,
+.eos-field select {
+    width: 100%;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: .95rem;
+    padding: 10px 14px;
+    border: var(--border);
+    border-radius: 12px;
+    background: var(--teal-xl);
+    color: var(--dark);
+    transition: box-shadow .15s;
+    outline: none;
+}
+.eos-field input:focus,
+.eos-field textarea:focus,
+.eos-field select:focus {
+    box-shadow: 0 0 0 3px var(--teal-l), var(--shadow);
+}

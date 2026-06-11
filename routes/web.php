@@ -1,23 +1,23 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventParticipantController;
 use App\Http\Controllers\EventReminderController;
 use App\Http\Controllers\EventSuggestionController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SmartRequestController;
 use App\Http\Controllers\UserPreferenceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
 });
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/calendar-tester', function () {
@@ -60,6 +60,17 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/calendars', function () {
+        return view('calendars.index');
+    })->name('calendars.index');
+
+    Route::get('/calendars/{calendar}', [CalendarController::class, 'show'])
+        ->name('calendars.show');
+
+    Route::get('/smart-requests', function () {
+        return view('smart-requests.index');
+    })->name('smart-requests.index');
+
     Route::prefix('api')->group(function () {
         Route::get('/user-preferences', [UserPreferenceController::class, 'show'])
             ->name('user-preferences.show');
@@ -67,11 +78,19 @@ Route::middleware('auth')->group(function () {
         Route::patch('/user-preferences', [UserPreferenceController::class, 'update'])
             ->name('user-preferences.update');
 
+        Route::get('/calendars/{calendar}/events', [EventController::class, 'indexByCalendar']);
+
         Route::get('/smart-requests/status/{status}', [SmartRequestController::class, 'byStatus'])
             ->name('smart-requests.by-status');
 
         Route::post('/smart-requests', [SmartRequestController::class, 'store'])
             ->name('smart-requests.store');
+
+        Route::put('/smart-requests/{smartRequest}', [SmartRequestController::class, 'update'])
+            ->name('smart-requests.update');
+
+        Route::get('/smart-requests/{smartRequest}', [SmartRequestController::class, 'show'])
+            ->name('smart-requests.show');
 
         Route::post('/smart-requests/{smartRequest}/confirm', [SmartRequestController::class, 'confirm'])
             ->name('smart-requests.confirm');

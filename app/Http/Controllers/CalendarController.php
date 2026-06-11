@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia; // se não usar Inertia, retorne view normal
 
 class CalendarController extends Controller
 {
@@ -31,6 +32,11 @@ class CalendarController extends Controller
         return CalendarResource::collection($calendars)->response();
     }
 
+    public function showCalendar(Calendar $calendar)
+    {
+        Gate::authorize('view', $calendar);
+        return view('calendars.show', compact('calendar'));
+    }
     public function store(
         StoreCalendarRequest $request,
         CreateCalendarService $service

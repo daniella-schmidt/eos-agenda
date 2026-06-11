@@ -1,31 +1,22 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
+<x-eos-guest title="Verifique seu e-mail" :decoVariant="3">
+
+    <div class="auth-sub">
+        Obrigado por se cadastrar! Antes de começar, verifique seu e-mail clicando no link que enviamos. Se não recebeu, podemos reenviar.
     </div>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600">
-            {{ __('A new verification link has been sent to the email address you provided during registration.') }}
+        <div class="status-message" style="background: #d1fae5; color: #065f46;">
+            Um novo link de verificação foi enviado para seu e-mail.
         </div>
     @endif
 
-    <div class="mt-4 flex items-center justify-between">
-        <form method="POST" action="{{ route('verification.send') }}">
-            @csrf
+    <form method="POST" action="{{ route('verification.send') }}" style="margin-top: 20px;">
+        @csrf
+        <button type="submit" class="btn btn-main btn-block">Reenviar e-mail de verificação →</button>
+    </form>
 
-            <div>
-                <x-primary-button>
-                    {{ __('Resend Verification Email') }}
-                </x-primary-button>
-            </div>
-        </form>
-
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {{ __('Log Out') }}
-            </button>
-        </form>
-    </div>
-</x-guest-layout>
+    <form method="POST" action="{{ route('logout') }}" style="margin-top: 16px;">
+        @csrf
+        <button type="submit" class="btn btn-ghost btn-block" style="width:100%;">Sair</button>
+    </form>
+</x-eos-guest>

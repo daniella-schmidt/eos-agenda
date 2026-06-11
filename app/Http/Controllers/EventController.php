@@ -10,6 +10,7 @@ use App\Http\Requests\Event\IndexEventRequest;
 use App\Http\Requests\Event\StoreEventRequest;
 use App\Http\Requests\Event\UpdateEventRequest;
 use App\Http\Resources\EventResource;
+use App\Models\Calendar;
 use App\Models\Event;
 use App\Services\Event\CancelEventService;
 use App\Services\Event\CreateEventService;
@@ -34,26 +35,22 @@ class EventController extends Controller
 
             ->when(
                 $request->validated('calendarId'),
-                fn ($query, $calendarId) =>
-                    $query->where('calendarId', $calendarId)
+                fn ($query, $calendarId) => $query->where('calendarId', $calendarId)
             )
 
             ->when(
                 $request->validated('status'),
-                fn ($query, $status) =>
-                    $query->where('status', $status)
+                fn ($query, $status) => $query->where('status', $status)
             )
 
             ->when(
                 $request->validated('from'),
-                fn ($query, $from) =>
-                    $query->where('endAt', '>', $from)
+                fn ($query, $from) => $query->where('endAt', '>', $from)
             )
 
             ->when(
                 $request->validated('to'),
-                fn ($query, $to) =>
-                    $query->where('startAt', '<', $to)
+                fn ($query, $to) => $query->where('startAt', '<', $to)
             )
 
             ->orderBy('startAt')
@@ -165,5 +162,33 @@ class EventController extends Controller
         $service->handle($event);
 
         return response()->noContent();
+    }
+
+    public function indexByCalendar(
+        IndexEventRequest $request,
+        Calendar $calendar
+    ): AnonymousResourceCollection {
+        Gate::authorize('view', $calendar);
+
+        $events = $calendar->events()
+            ->where('userId', $request->user()->id)
+            ->with('calendar')
+            ->withCount(['participants', 'reminders'])
+            ->when(
+                $request->validated('status'),
+                fn ($query, $status) => $query->where('status', $status)
+            )
+            ->when(
+                $request->validated('from'),
+                fn ($query, $from) => $query->where('endAt', '>', $from)
+            )
+            ->when(
+                $request->validated('to'),
+                fn ($query, $to) => $query->where('startAt', '<', $to)
+            )
+            ->orderBy('startAt')
+            ->paginate($request->validated('perPage', 20));
+
+        return EventResource::collection($events);
     }
 }
