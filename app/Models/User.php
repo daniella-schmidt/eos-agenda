@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\UserPreference;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'name', 
@@ -49,6 +51,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getEmailForVerification(): string
     {
         return $this->email;
+    }
+
+    public function preference(): HasOne
+    {
+        return $this->hasOne(UserPreference::class, 'userId');
     }
 
     /**

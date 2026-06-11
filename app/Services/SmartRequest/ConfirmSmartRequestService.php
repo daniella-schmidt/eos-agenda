@@ -3,12 +3,14 @@
 namespace App\Services\SmartRequest;
 
 use App\Enums\EventParticipantResponseStatus;
+use App\Enums\EventParticipantRole;
 use App\Enums\EventReminderType;
 use App\Enums\EventSource;
 use App\Enums\EventStatus;
 use App\Enums\SmartRequestStatus;
 use App\Models\Calendar;
 use App\Models\Event;
+use App\Services\Event\CheckEventConflictService;
 use App\Models\SmartRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -92,7 +94,7 @@ class ConfirmSmartRequestService
                 $event->participants()->create([
                     'name' => $participant['name'],
                     'email' => $participant['email'],
-                    'role' => 'attendee',
+                    'role' => EventParticipantRole::Attendee,
                     'responseStatus' => EventParticipantResponseStatus::Pending,
                 ]);
             }

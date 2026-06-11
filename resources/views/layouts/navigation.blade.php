@@ -15,6 +15,18 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('event-tester')" :active="request()->routeIs('event-tester')">
+                        {{ __('Eventos') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('event-reminder-tester')" :active="request()->routeIs('event-reminder-tester')">
+                        {{ __('Lembretes') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('contact-tester')" :active="request()->routeIs('contact-tester')">
+                        {{ __('Contatos') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('event-participant-tester')" :active="request()->routeIs('event-participant-tester')">
+                        {{ __('Participantes') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -69,6 +81,18 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('event-tester')" :active="request()->routeIs('event-tester')">
+                {{ __('Eventos') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('event-reminder-tester')" :active="request()->routeIs('event-reminder-tester')">
+                {{ __('Lembretes') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('contact-tester')" :active="request()->routeIs('contact-tester')">
+                {{ __('Contatos') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('event-participant-tester')" :active="request()->routeIs('event-participant-tester')">
+                {{ __('Participantes') }}
             </x-responsive-nav-link>
         </div>
 

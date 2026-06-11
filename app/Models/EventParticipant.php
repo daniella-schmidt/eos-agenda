@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EventParticipantResponseStatus;
+use App\Enums\EventParticipantRole;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -53,6 +54,7 @@ class EventParticipant extends Model
         return [
             'eventId' => 'integer',
             'contactId' => 'integer',
+            'role' => EventParticipantRole::class,
             'responseStatus' => EventParticipantResponseStatus::class,
             'createAt' => 'datetime',
         ];

@@ -54,7 +54,6 @@ class Contact extends Model
     {
         return [
             'userId' => 'integer',
-            'company' => 'boolean',
             'createdAt' => 'datetime',
             'updatedAt' => 'datetime',
         ];

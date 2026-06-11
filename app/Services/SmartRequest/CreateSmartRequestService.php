@@ -6,12 +6,15 @@ use App\DTO\SmartRequest\CreateSmartRequestDTO;
 use App\Enums\SmartRequestStatus;
 use App\Models\SmartRequest;
 use App\Models\User;
+use App\Services\Event\CheckEventConflictService;
+use App\Services\EventSuggestion\GenerateEventSuggestionsService;
 
 class CreateSmartRequestService
 {
     public function __construct(
         private ExtractEventDataService $extractEventDataService,
         private CheckEventConflictService $checkEventConflictService,
+        private GenerateEventSuggestionsService $generateEventSuggestionsService,
     ) {
     }
 
@@ -63,6 +66,10 @@ class CreateSmartRequestService
                 ? SmartRequestStatus::SuggestingTimes
                 : SmartRequestStatus::NeedsConfirmation,
         ]);
+
+        if ($hasConflict) {
+            $this->generateEventSuggestionsService->handle($smartRequest);
+        }
 
         return $smartRequest->fresh();
     }

@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'userId',
-    'smartRequesId',
-    'suggested_start_at',
-    'suggested_end_at',
+    'smartRequestId',
+    'suggestedStartAt',
+    'suggestedEndAt',
     'score',
     'reason',
     'selected',
@@ -40,7 +40,7 @@ class EventSuggestion extends Model
 
     public function smartRequest(): BelongsTo
     {
-        return $this->belongsTo(SmartRequest::class, 'smartRequesId');
+        return $this->belongsTo(SmartRequest::class, 'smartRequestId');
     }
 
     /**
@@ -52,9 +52,9 @@ class EventSuggestion extends Model
     {
         return [
             'userId' => 'integer',
-            'smartRequesId' => 'integer',
-            'suggested_start_at' => 'datetime',
-            'suggested_end_at' => 'datetime',
+            'smartRequestId' => 'integer',
+            'suggestedStartAt' => 'datetime',
+            'suggestedEndAt' => 'datetime',
             'score' => 'decimal:2',
             'selected' => 'boolean',
             'createdAt' => 'datetime',

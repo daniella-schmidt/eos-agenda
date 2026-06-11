@@ -6,6 +6,8 @@ use App\Enums\SmartRequestStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'userId',
@@ -52,6 +54,17 @@ class SmartRequest extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'userId');
+    }
+
+    public function suggestions(): HasMany
+    {
+        return $this->hasMany(EventSuggestion::class, 'smartRequestId');
+    }
+
+    public function selectedSuggestion(): HasOne
+    {
+        return $this->hasOne(EventSuggestion::class, 'smartRequestId')
+            ->where('selected', true);
     }
 
     /**
