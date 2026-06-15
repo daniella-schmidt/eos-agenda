@@ -3,10 +3,10 @@
         <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Teste de sugestoes de eventos
+                    Sugestões de eventos
                 </h2>
                 <p class="mt-1 text-sm text-gray-500">
-                    Liste, gere e selecione sugestoes vinculadas a uma smart request.
+                    Liste, gere e selecione sugestões vinculadas a uma solicitação.
                 </p>
             </div>
             <span id="last-status" class="inline-flex w-fit rounded bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
@@ -20,11 +20,11 @@
             <div class="grid gap-6 xl:grid-cols-[minmax(420px,620px)_1fr]">
                 <section class="space-y-6">
                     <div class="rounded bg-white p-5 shadow">
-                        <h3 class="text-lg font-semibold text-gray-900">Smart request</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">Solicitação</h3>
 
                         <div class="mt-4">
                             <label for="smart-request-id" class="block text-sm font-medium text-gray-700">
-                                ID da smart request
+                                ID da solicitação
                             </label>
                             <input
                                 id="smart-request-id"
@@ -40,8 +40,8 @@
                     <div class="rounded bg-white p-5 shadow">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <p class="text-xs font-semibold uppercase text-blue-700">GET</p>
-                                <h3 class="mt-1 text-lg font-semibold text-gray-900">Listar sugestoes</h3>
+                                <p class="text-xs font-semibold uppercase text-blue-700">Consulta</p>
+                                <h3 class="mt-1 text-lg font-semibold text-gray-900">Listar sugestões</h3>
                             </div>
                             <code class="rounded bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800">
                                 /api/smart-requests/{id}/suggestions
@@ -49,15 +49,15 @@
                         </div>
 
                         <button id="list-button" type="button" class="mt-5 rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
-                            Enviar GET
+                            Atualizar lista
                         </button>
                     </div>
 
                     <div class="rounded bg-white p-5 shadow">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <p class="text-xs font-semibold uppercase text-green-700">POST</p>
-                                <h3 class="mt-1 text-lg font-semibold text-gray-900">Gerar sugestoes</h3>
+                                <p class="text-xs font-semibold uppercase text-green-700">Cadastro</p>
+                                <h3 class="mt-1 text-lg font-semibold text-gray-900">Gerar sugestões</h3>
                             </div>
                             <code class="rounded bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-800">
                                 /api/smart-requests/{id}/suggestions/generate
@@ -82,7 +82,7 @@
                             </div>
 
                             <button type="submit" class="rounded bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800">
-                                Enviar POST
+                                Salvar
                             </button>
                         </form>
                     </div>
@@ -90,8 +90,8 @@
                     <div class="rounded bg-white p-5 shadow">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <p class="text-xs font-semibold uppercase text-purple-700">POST</p>
-                                <h3 class="mt-1 text-lg font-semibold text-gray-900">Selecionar sugestao</h3>
+                                <p class="text-xs font-semibold uppercase text-purple-700">Cadastro</p>
+                                <h3 class="mt-1 text-lg font-semibold text-gray-900">Selecionar sugestão</h3>
                             </div>
                             <code class="rounded bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-800">
                                 /api/event-suggestions/{id}/select
@@ -100,7 +100,7 @@
 
                         <form id="select-form" class="mt-5">
                             <label for="event-suggestion-id" class="block text-sm font-medium text-gray-700">
-                                ID da sugestao
+                                ID da sugestão
                             </label>
                             <div class="mt-1 flex flex-col gap-3 sm:flex-row">
                                 <input id="event-suggestion-id" type="number" min="1" required placeholder="Ex.: 1" class="block w-full rounded border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
@@ -115,7 +115,7 @@
                 <section class="space-y-6">
                     <div class="rounded bg-white p-5 shadow">
                         <div class="flex items-center justify-between gap-4">
-                            <h3 class="font-semibold text-gray-900">Sugestoes retornadas</h3>
+                            <h3 class="font-semibold text-gray-900">Sugestões retornadas</h3>
                             <span id="suggestion-count" class="rounded bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
                                 0 itens
                             </span>
@@ -123,19 +123,19 @@
 
                         <div id="suggestion-list" class="mt-4 space-y-3">
                             <p class="rounded bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
-                                Liste ou gere sugestoes para exibi-las aqui.
+                                Liste ou gere sugestões para exibi-las aqui.
                             </p>
                         </div>
                     </div>
 
                     <div class="rounded bg-gray-900 p-5 shadow">
                         <div class="flex items-center justify-between gap-4">
-                            <h3 class="font-semibold text-white">Resposta JSON</h3>
+                            <h3 class="font-semibold text-white">Resultado</h3>
                             <button id="clear-output" type="button" class="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-gray-200 hover:bg-gray-600">
                                 Limpar
                             </button>
                         </div>
-                        <pre id="output" class="mt-4 min-h-80 overflow-auto whitespace-pre-wrap text-sm leading-6 text-green-300">Execute um endpoint para visualizar a resposta.</pre>
+                        <pre id="output" class="mt-4 min-h-80 overflow-auto whitespace-pre-wrap text-sm leading-6 text-green-300">Escolha uma acao para ver o resultado.</pre>
                     </div>
                 </section>
             </div>
@@ -153,7 +153,7 @@
             const id = document.getElementById('smart-request-id').value;
 
             if (!id) {
-                throw new Error('Informe o ID da smart request.');
+                throw new Error('Informe o ID da solicitação.');
             }
 
             return id;
@@ -208,7 +208,7 @@
             suggestionCount.textContent = `${suggestions.length} ${suggestions.length === 1 ? 'item' : 'itens'}`;
 
             if (suggestions.length === 0) {
-                suggestionList.innerHTML = '<p class="rounded bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">Nenhuma sugestao encontrada.</p>';
+                suggestionList.innerHTML = '<p class="rounded bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">Nenhuma sugestão encontrada.</p>';
                 return;
             }
 
@@ -245,7 +245,7 @@
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'mt-4 rounded bg-purple-700 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-800 disabled:cursor-not-allowed disabled:bg-gray-400';
-                button.textContent = suggestion.selected ? 'Ja selecionada' : 'Selecionar esta sugestao';
+                button.textContent = suggestion.selected ? 'Já selecionada' : 'Selecionar esta sugestão';
                 button.disabled = suggestion.selected;
                 button.addEventListener('click', () => selectSuggestion(suggestion.id));
 
@@ -263,9 +263,9 @@
 
                 card.className = `rounded border p-4 ${selected ? 'border-green-300 bg-green-50' : 'border-gray-200'}`;
                 badge.className = `rounded px-2.5 py-1 text-xs font-semibold ${selected ? 'bg-green-200 text-green-900' : 'bg-blue-100 text-blue-800'}`;
-                badge.textContent = selected ? 'Selecionada' : badge.textContent.replace('Selecionada', 'Nao selecionada');
+                badge.textContent = selected ? 'Selecionada' : badge.textContent.replace('Selecionada', 'Não selecionada');
                 button.disabled = selected;
-                button.textContent = selected ? 'Ja selecionada' : 'Selecionar esta sugestao';
+                button.textContent = selected ? 'Já selecionada' : 'Selecionar esta sugestão';
             });
         }
 
@@ -316,7 +316,7 @@
             const id = document.getElementById('event-suggestion-id').value;
 
             if (!id) {
-                setStatus('Informe uma sugestao', false);
+                setStatus('Informe uma sugestão', false);
                 return;
             }
 
@@ -328,7 +328,7 @@
         });
 
         document.getElementById('clear-output').addEventListener('click', () => {
-            output.textContent = 'Execute um endpoint para visualizar a resposta.';
+            output.textContent = 'Escolha uma acao para ver o resultado.';
             setStatus('Pronto');
         });
     </script>

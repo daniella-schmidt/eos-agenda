@@ -316,7 +316,7 @@
         <div class="eos-modal">
             <div class="eos-modal__header">
                 <h3 id="modalTitle" class="eos-modal__title">Novo Calendário</h3>
-                <button class="eos-modal__close" id="closeModal" aria-label="Fechar">✕</button>
+                <button class="eos-modal__close" id="closeModal" aria-label="Fechar">x</button>
             </div>
             <div class="eos-modal__body">
                 <form id="calendarForm">

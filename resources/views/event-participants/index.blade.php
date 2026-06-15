@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h2 class="text-xl font-semibold text-gray-800">Teste de participantes</h2>
+                <h2 class="text-xl font-semibold text-gray-800">Participantes</h2>
                 <p class="mt-1 text-sm text-gray-500">Gerencie participantes vinculados aos eventos.</p>
             </div>
             <span id="status" class="rounded bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">Pronto</span>
@@ -10,8 +10,9 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:px-8 xl:grid-cols-[minmax(420px,620px)_1fr]">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <section class="space-y-6">
+
                 <div class="rounded bg-white p-5 shadow">
                     <h3 class="text-lg font-semibold text-gray-900">Evento</h3>
                     <div class="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -25,15 +26,17 @@
                 <div class="rounded bg-white p-5 shadow">
                     <div class="flex items-center justify-between gap-3">
                         <h3 class="text-lg font-semibold text-gray-900">Listar participantes</h3>
-                        <code class="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">GET /api/events/{event}/participants</code>
+                        <span class="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">Consulta</span>
+
                     </div>
-                    <button id="list-button" type="button" class="mt-5 rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white">Enviar GET</button>
+                    <button id="list-button" type="button" class="mt-5 rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white">Atualizar lista</button>
                 </div>
 
                 <div class="rounded bg-white p-5 shadow">
                     <div class="flex items-center justify-between gap-3">
                         <h3 class="text-lg font-semibold text-gray-900">Adicionar participante</h3>
-                        <code class="rounded bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">POST</code>
+                        <span class="rounded bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">Adicionar</span>
+
                     </div>
                     <form id="create-form" class="mt-5 space-y-4">
                         <label class="block text-sm font-medium text-gray-700">Contato existente (opcional)
@@ -51,11 +54,11 @@
                         </div>
                         <label class="block text-sm font-medium text-gray-700">Papel
                             <select id="create-role" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
-                                <option value="attendee">attendee</option>
-                                <option value="organizer">organizer</option>
+                                <option value="attendee">Participante</option>
+                                <option value="organizer">Organizador</option>
                             </select>
                         </label>
-                        <button class="rounded bg-green-700 px-4 py-2 text-sm font-semibold text-white">Enviar POST</button>
+                        <button class="rounded bg-green-700 px-4 py-2 text-sm font-semibold text-white">Salvar</button>
                     </form>
                 </div>
 
@@ -65,15 +68,16 @@
                         <option value="">Liste os participantes de um evento</option>
                     </select>
                     <div class="mt-4 grid grid-cols-2 gap-3">
-                        <button id="show-button" type="button" class="rounded bg-gray-900 px-3 py-2 text-sm font-semibold text-white">GET por ID</button>
-                        <button id="delete-button" type="button" class="rounded bg-red-700 px-3 py-2 text-sm font-semibold text-white">DELETE</button>
+                        <button id="show-button" type="button" class="rounded bg-gray-900 px-3 py-2 text-sm font-semibold text-white">Ver detalhes</button>
+                        <button id="delete-button" type="button" class="rounded bg-red-700 px-3 py-2 text-sm font-semibold text-white">Excluir</button>
                     </div>
                 </div>
 
                 <div class="rounded bg-white p-5 shadow">
                     <div class="flex items-center justify-between gap-3">
                         <h3 class="text-lg font-semibold text-gray-900">Atualizar participante</h3>
-                        <code class="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800">PATCH</code>
+                        <span class="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800">Edição</span>
+
                     </div>
                     <form id="update-form" class="mt-5 space-y-4">
                         <div class="grid gap-4 sm:grid-cols-2">
@@ -85,31 +89,30 @@
                             </label>
                             <label class="text-sm font-medium text-gray-700">Papel
                                 <select id="update-role" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
-                                    <option value="attendee">attendee</option>
-                                    <option value="organizer">organizer</option>
+                                    <option value="attendee">Participante</option>
+                                    <option value="organizer">Organizador</option>
                                 </select>
                             </label>
-                            <label class="text-sm font-medium text-gray-700">Resposta
+                            <label class="text-sm font-medium text-gray-700">Resultado
                                 <select id="update-response" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
-                                    <option value="pending">pending</option>
-                                    <option value="accepted">accepted</option>
-                                    <option value="declined">declined</option>
-                                    <option value="tentative">tentative</option>
+                                    <option value="pending">Pendente</option>
+                                    <option value="accepted">Aceito</option>
+                                    <option value="declined">Recusado</option>
+                                    <option value="tentative">Talvez</option>
                                 </select>
                             </label>
                         </div>
-                        <button class="rounded bg-purple-700 px-4 py-2 text-sm font-semibold text-white">Enviar PATCH</button>
+                        <button class="rounded bg-purple-700 px-4 py-2 text-sm font-semibold text-white">Salvar alterações</button>
                     </form>
                 </div>
             </section>
 
-            <section class="self-start rounded bg-gray-950 p-5 shadow xl:sticky xl:top-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-semibold text-white">Resposta</h3>
-                    <button id="clear" type="button" class="rounded bg-white px-3 py-1.5 text-sm font-medium text-gray-900">Limpar</button>
-                </div>
-                <pre id="output" class="mt-4 min-h-[720px] overflow-auto whitespace-pre-wrap text-sm leading-6 text-gray-100">Execute um endpoint.</pre>
-            </section>
+            <div id="output" class="rounded bg-gray-950 p-5 shadow text-sm font-semibold leading-6 text-gray-100">
+                <button id="clear" type="button" class="mb-4 rounded bg-white px-3 py-1.5 text-sm font-medium text-gray-900">Limpar</button>
+                <div class="rounded bg-white/10 p-4">Escolha uma ação para acompanhar o resultado aqui.</div>
+            </div>
+
+
         </div>
     </div>
 
@@ -139,25 +142,48 @@
             statusBadge.classList.add(ok === true ? 'text-green-800' : ok === false ? 'text-red-800' : 'text-gray-700');
         }
 
+        function setAlert(message, variant = 'neutral') {
+            const base = 'mt-4 rounded p-4 text-sm font-semibold leading-6';
+
+            const variants = {
+                neutral: 'bg-white/10 text-gray-100',
+                success: 'bg-green-50 text-green-800',
+                error: 'bg-red-50 text-red-800',
+                loading: 'bg-blue-50 text-blue-800',
+            };
+            output.className = base + ' ' + (variants[variant] || variants.neutral);
+            output.textContent = message || '';
+        }
+
         async function request(method, url, body = null) {
-            setStatus(`${method} ${url}`);
+            setStatus('Carregando...');
             const response = await fetch(url, {
                 method,
                 headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
                 body: body === null ? null : JSON.stringify(body),
             });
-            const text = await response.text();
-            let data;
-            try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-            output.textContent = JSON.stringify({ request: { method, url, body }, response: { status: response.status, ok: response.ok, data } }, null, 2);
-            setStatus(`${response.status} ${response.ok ? 'OK' : 'Erro'}`, response.ok);
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch {
+                data = null;
+            }
+
+            const msg = response.ok
+                ? 'Ação concluída com sucesso.'
+                : (data?.message || data?.error || 'Não foi possível concluir a ação.');
+
+            setAlert(msg, response.ok ? 'success' : 'error');
+            setStatus(response.ok ? 'Concluído' : 'Erro', response.ok);
             return { response, data };
         }
+
 
         async function run(callback) {
             try { await callback(); } catch (error) {
                 setStatus('Erro', false);
-                output.textContent = JSON.stringify({ error: error.message }, null, 2);
+                output.textContent = error.message;
             }
         }
 
@@ -169,13 +195,13 @@
             if (eventsResult.response.ok) {
                 const current = eventSelect.value;
                 eventSelect.innerHTML = '<option value="">Selecione um evento</option>';
-                (eventsResult.data?.data ?? []).forEach((event) => eventSelect.add(new Option(`#${event.id} - ${event.title}`, event.id)));
+                (eventsResult.data?.data ?? []).forEach((event) => eventSelect.add(new Option(event.title, event.id)));
                 if ([...eventSelect.options].some((option) => option.value === current)) eventSelect.value = current;
             }
             if (contactsResult.response.ok) {
                 const contactSelect = el('create-contact');
                 contactSelect.innerHTML = '<option value="">Sem contato vinculado</option>';
-                (contactsResult.data?.data ?? []).forEach((contact) => contactSelect.add(new Option(`#${contact.id} - ${contact.name}`, contact.id)));
+                (contactsResult.data?.data ?? []).forEach((contact) => contactSelect.add(new Option(contact.name, contact.id)));
             }
         }
 
@@ -184,7 +210,7 @@
             const current = preferredId ? String(preferredId) : participantSelect.value;
             participantSelect.innerHTML = '<option value="">Selecione um participante</option>';
             items.forEach((participant) => participantSelect.add(new Option(
-                `#${participant.id} - ${participant.name || participant.email || 'Sem nome'} (${participant.role})`,
+                `${participant.name || participant.email || 'Sem nome'} (${participant.role === 'organizer' ? 'Organizador' : 'Participante'})`,
                 participant.id,
             )));
             if ([...participantSelect.options].some((option) => option.value === current)) participantSelect.value = current;
@@ -242,10 +268,17 @@
         });
         el('show-button').addEventListener('click', () => run(() => request('GET', `/api/event-participants/${participantId()}`)));
         el('delete-button').addEventListener('click', () => run(async () => {
+            if (!confirm('Excluir este participante do evento?')) return;
             const result = await request('DELETE', `/api/event-participants/${participantId()}`);
             if (result.response.ok) await loadParticipants();
         }));
-        el('clear').addEventListener('click', () => { output.textContent = 'Execute um endpoint.'; setStatus('Pronto'); });
+        el('clear').addEventListener('click', () => { 
+            setAlert('Escolha uma ação para acompanhar o resultado aqui.', 'neutral');
+            setStatus('Pronto');
+        });
+
+        setAlert('Escolha uma ação para acompanhar o resultado aqui.', 'neutral');
         run(loadDependencies);
+
     </script>
 </x-app-layout>

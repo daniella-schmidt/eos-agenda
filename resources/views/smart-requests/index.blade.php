@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="eos-page-header">
             <div class="eos-page-header__left">
-                <h2 class="eos-page-title">Solicitações Inteligentes</h2>
+                <h2 class="eos-page-title">Solicitações inteligentes</h2>
             </div>
         </div>
     </x-slot>
@@ -568,7 +568,7 @@
                 <div class="sr-card__footer">
                     ${canEdit    ? `<button class="eos-btn eos-btn--ghost eos-btn--sm" onclick="openEditModal(${req.id})">Revisar</button>` : ''}
                     ${canConfirm ? `<button class="eos-btn eos-btn--success eos-btn--sm" onclick="quickConfirm(${req.id})">Confirmar</button>` : ''}
-                    ${confirmed  ? `<span style="font-weight:800;font-size:.8rem;color:#16a34a">Evento criado com sucesso ✓</span>` : ''}
+                    ${confirmed  ? `<span style="font-weight:800;font-size:.8rem;color:#16a34a">Evento criado com sucesso</span>` : ''}
                     <button class="eos-btn eos-btn--danger eos-btn--sm" onclick="deleteRequest(${req.id})">🗑️</button>
                     <div class="sr-card__time">${createdAt}</div>
                 </div>
