@@ -26,13 +26,6 @@
 
                         <form id="create-form" class="mt-5 space-y-4">
                             <div>
-                                <label for="create-calendar" class="block text-sm font-medium text-gray-700">Calendario</label>
-                                <select id="create-calendar" required class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                    <option value="">Carregando calendarios...</option>
-                                </select>
-                            </div>
-
-                            <div>
                                 <label for="create-title" class="block text-sm font-medium text-gray-700">Titulo</label>
                                 <input id="create-title" type="text" maxlength="200" required value="Reuniao de planejamento" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             </div>
@@ -53,26 +46,13 @@
                                 </div>
                             </div>
 
-                            <div class="grid gap-4 sm:grid-cols-3">
-                                <div>
-                                    <label for="create-status" class="block text-sm font-medium text-gray-700">Status</label>
-                                    <select id="create-status" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                        <option value="confirmed">confirmed</option>
-                                        <option value="draft">draft</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="create-priority" class="block text-sm font-medium text-gray-700">Prioridade</label>
-                                    <select id="create-priority" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                        <option value="low">low</option>
-                                        <option value="medium" selected>medium</option>
-                                        <option value="high">high</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="create-timezone" class="block text-sm font-medium text-gray-700">Timezone</label>
-                                    <input id="create-timezone" type="text" value="America/Sao_Paulo" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                </div>
+                            <div>
+                                <label for="create-priority" class="block text-sm font-medium text-gray-700">Prioridade</label>
+                                <select id="create-priority" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="low">low</option>
+                                    <option value="medium" selected>medium</option>
+                                    <option value="high">high</option>
+                                </select>
                             </div>
 
                             <div class="grid gap-4 sm:grid-cols-2">
@@ -242,15 +222,12 @@
 
         function createPayload() {
             return {
-                calendarId: Number(field('create-calendar').value),
                 title: field('create-title').value,
                 description: nullable(field('create-description').value),
                 startAt: field('create-start').value,
                 endAt: field('create-end').value,
-                timezone: field('create-timezone').value,
                 location: nullable(field('create-location').value),
                 meetingURL: nullable(field('create-url').value),
-                status: field('create-status').value,
                 priority: field('create-priority').value,
                 isAllDay: field('create-all-day').checked,
             };
@@ -311,7 +288,6 @@
                 throw new Error(data?.message || 'Nao foi possivel carregar os calendarios.');
             }
             const calendars = data.data ?? [];
-            fillCalendarSelect(field('create-calendar'), calendars);
             fillCalendarSelect(field('update-calendar'), calendars);
             fillCalendarSelect(field('filter-calendar'), calendars, true);
             renderPayload();

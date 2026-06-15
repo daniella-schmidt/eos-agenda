@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -27,5 +28,17 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+
+        $user = User::query()
+            ->where('email', 'test@example.com')
+            ->firstOrFail();
+
+        $this->assertDatabaseCount('calendars', 1);
+        $this->assertDatabaseHas('calendars', [
+            'userId' => $user->id,
+            'name' => 'Meu Calendário',
+            'isDefault' => true,
+            'isActive' => true,
+        ]);
     }
 }

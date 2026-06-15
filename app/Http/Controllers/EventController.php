@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
@@ -65,10 +66,26 @@ class EventController extends Controller
     ): JsonResponse {
         Gate::authorize('create', Event::class);
 
+        $calendarId = $request->filled('calendarId')
+            ? $request->integer('calendarId')
+            : Calendar::query()
+                ->where('userId', $request->user()->id)
+                ->where('isDefault', true)
+                ->where('isActive', true)
+                ->value('id');
+
+        if (! $calendarId) {
+            throw ValidationException::withMessages([
+                'calendarId' => [
+                    'Nenhum calendário padrão ativo foi encontrado.',
+                ],
+            ]);
+        }
+
         $event = $service->handle(
             new CreateEventDTO(
                 userId: $request->user()->id,
-                calendarId: $request->integer('calendarId'),
+                calendarId: $calendarId,
                 title: $request->validated('title'),
                 description: $request->validated('description'),
                 startAt: $request->validated('startAt'),
@@ -79,12 +96,7 @@ class EventController extends Controller
                 ),
                 location: $request->validated('location'),
                 meetingURL: $request->validated('meetingURL'),
-                status: EventStatus::from(
-                    $request->validated(
-                        'status',
-                        EventStatus::Confirmed->value
-                    )
-                ),
+                status: EventStatus::Confirmed,
                 priority: EventPriority::from(
                     $request->validated(
                         'priority',

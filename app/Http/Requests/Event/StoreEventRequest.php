@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Event;
 
 use App\Enums\EventPriority;
-use App\Enums\EventStatus;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,7 +18,7 @@ class StoreEventRequest extends FormRequest
     {
         return [
             'calendarId' => [
-                'required',
+                'nullable',
                 'integer',
                 Rule::exists('calendars', 'id')->where(
                     fn (Builder $query) => $query
@@ -37,14 +36,6 @@ class StoreEventRequest extends FormRequest
             'timezone' => ['nullable', 'timezone'],
             'location' => ['nullable', 'string', 'max:500'],
             'meetingURL' => ['nullable', 'url', 'max:1000'],
-
-            'status' => [
-                'sometimes',
-                Rule::in([
-                    EventStatus::Draft->value,
-                    EventStatus::Confirmed->value,
-                ]),
-            ],
 
             'priority' => [
                 'sometimes',

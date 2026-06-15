@@ -12,6 +12,20 @@ class SmartRequestEndpointTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_smart_request_page_uses_valid_status_filters(): void
+    {
+        $response = $this
+            ->actingAs(User::factory()->create())
+            ->get('/smart-requests');
+
+        $response
+            ->assertOk()
+            ->assertSee('data-status="needs_confirmation"', false)
+            ->assertSee('data-status="completed"', false)
+            ->assertDontSee('data-status="extracted"', false)
+            ->assertDontSee('data-status="processing"', false);
+    }
+
     public function test_user_can_list_their_smart_requests_by_status(): void
     {
         $user = User::factory()->create();

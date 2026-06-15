@@ -339,10 +339,14 @@
         <!-- ── STATUS TABS ────────────────────────────────── -->
         <div class="sr-tabs">
             <button class="sr-tab active" data-status="all" onclick="switchTab(this)">Todas</button>
-            <button class="sr-tab" data-status="pending"    onclick="switchTab(this)">Pendentes</button>
-            <button class="sr-tab" data-status="extracted"  onclick="switchTab(this)">Extraídas</button>
-            <button class="sr-tab" data-status="confirmed"  onclick="switchTab(this)">Confirmadas</button>
-            <button class="sr-tab" data-status="failed"     onclick="switchTab(this)">Com erro</button>
+            <button class="sr-tab" data-status="pending" onclick="switchTab(this)">Pendentes</button>
+            <button class="sr-tab" data-status="needs_more_info" onclick="switchTab(this)">Precisam de informações</button>
+            <button class="sr-tab" data-status="needs_confirmation" onclick="switchTab(this)">Aguardando confirmação</button>
+            <button class="sr-tab" data-status="suggesting_times" onclick="switchTab(this)">Sugerindo horários</button>
+            <button class="sr-tab" data-status="confirmed" onclick="switchTab(this)">Confirmadas</button>
+            <button class="sr-tab" data-status="completed" onclick="switchTab(this)">Concluídas</button>
+            <button class="sr-tab" data-status="cancelled" onclick="switchTab(this)">Canceladas</button>
+            <button class="sr-tab" data-status="failed" onclick="switchTab(this)">Com erro</button>
         </div>
 
         <!-- ── REQUEST LIST ───────────────────────────────── -->
@@ -408,6 +412,16 @@
         let currentTab = 'all';
         let allRequests = [];
         let calendars   = [];
+        const smartRequestStatuses = [
+            'pending',
+            'needs_more_info',
+            'needs_confirmation',
+            'suggesting_times',
+            'confirmed',
+            'completed',
+            'cancelled',
+            'failed',
+        ];
 
         /* ── TOAST ─────────────────────────────────────────── */
         function toast(msg, type = 'success') {
@@ -461,14 +475,18 @@
                     </div>
                 </div>`;
             try {
-                // Load all status groups
-                const statuses = ['pending', 'processing', 'extracted', 'confirmed', 'failed'];
-                const results = await Promise.allSettled(
-                    statuses.map(s => api(`/api/smart-requests/status/${s}`))
-                );
-                allRequests = results
-                    .filter(r => r.status === 'fulfilled' && r.value?.data)
-                    .flatMap(r => r.value.data);
+                if (currentTab === 'all') {
+                    const responses = await Promise.all(
+                        smartRequestStatuses.map(status =>
+                            api(`/api/smart-requests/status/${status}`)
+                        )
+                    );
+
+                    allRequests = responses.flatMap(response => response.data ?? []);
+                } else {
+                    const response = await api(`/api/smart-requests/status/${currentTab}`);
+                    allRequests = response.data ?? [];
+                }
 
                 renderList();
             } catch (e) {
@@ -484,13 +502,9 @@
 
         /* ── RENDER LIST ──────────────────────────────────── */
         function renderList() {
-            const filtered = currentTab === 'all'
-                ? allRequests
-                : allRequests.filter(r => r.status === currentTab);
-
             const container = document.getElementById('srList');
 
-            if (!filtered.length) {
+            if (!allRequests.length) {
                 const emptyMsg = currentTab === 'all'
                     ? 'Nenhuma solicitação ainda. Use o campo acima para criar a primeira!'
                     : `Nenhuma solicitação com status "${currentTab}".`;
@@ -503,17 +517,20 @@
             }
 
             // Sort: newest first
-            const sorted = [...filtered].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const sorted = [...allRequests].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
             container.innerHTML = `<div class="sr-list">${sorted.map(renderCard).join('')}</div>`;
         }
 
         function renderCard(req) {
             const statusMap = {
-                pending:    { label: 'Pendente',   cls: 'sr-status--pending',   bar: 'sr-card__bar--pending'    },
-                processing: { label: 'Processando', cls: 'sr-status--processing', bar: 'sr-card__bar--processing' },
-                extracted:  { label: 'Extraída',   cls: 'sr-status--extracted',  bar: 'sr-card__bar--success'    },
-                confirmed:  { label: 'Confirmada',  cls: 'sr-status--confirmed',  bar: 'sr-card__bar--confirmed'  },
-                failed:     { label: 'Com erro',    cls: 'sr-status--failed',     bar: 'sr-card__bar--failed'     },
+                pending:            { label: 'Pendente', cls: 'sr-status--pending', bar: 'sr-card__bar--pending' },
+                needs_more_info:    { label: 'Precisa de informações', cls: 'sr-status--processing', bar: 'sr-card__bar--processing' },
+                needs_confirmation: { label: 'Aguardando confirmação', cls: 'sr-status--extracted', bar: 'sr-card__bar--success' },
+                suggesting_times:   { label: 'Sugerindo horários', cls: 'sr-status--processing', bar: 'sr-card__bar--processing' },
+                confirmed:          { label: 'Confirmada', cls: 'sr-status--confirmed', bar: 'sr-card__bar--confirmed' },
+                completed:          { label: 'Concluída', cls: 'sr-status--confirmed', bar: 'sr-card__bar--confirmed' },
+                cancelled:          { label: 'Cancelada', cls: 'sr-status--failed', bar: 'sr-card__bar--failed' },
+                failed:             { label: 'Com erro', cls: 'sr-status--failed', bar: 'sr-card__bar--failed' },
             };
             const st = statusMap[req.status] || { label: req.status, cls: '', bar: '' };
             const createdAt = req.createdAt ? new Date(req.createdAt).toLocaleString('pt-BR') : '';
@@ -533,9 +550,9 @@
                 ? `<div class="sr-error-msg">⚠️ ${escHtml(req.errorMessage)}</div>`
                 : '';
 
-            const canEdit    = ['extracted','pending','failed'].includes(req.status);
-            const canConfirm = req.status === 'extracted';
-            const confirmed  = req.status === 'confirmed';
+            const canEdit    = ['needs_more_info', 'needs_confirmation', 'pending', 'failed'].includes(req.status);
+            const canConfirm = req.status === 'needs_confirmation';
+            const confirmed  = ['confirmed', 'completed'].includes(req.status);
 
             return `
             <div class="sr-card" id="sr-card-${req.id}">
@@ -567,11 +584,11 @@
         }
 
         /* ── TABS ─────────────────────────────────────────── */
-        function switchTab(btn) {
+        async function switchTab(btn) {
             document.querySelectorAll('.sr-tab').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
             currentTab = btn.dataset.status;
-            renderList();
+            await loadRequests();
         }
 
         /* ── COMPOSE ──────────────────────────────────────── */
@@ -645,7 +662,7 @@
             document.getElementById('editStartAt').value = toDatetimeLocal(req.extractedStartAt);
             document.getElementById('editEndAt').value = toDatetimeLocal(req.extractedEndAt);
 
-            document.getElementById('confirmBtn').style.display = req.status === 'extracted' ? '' : 'none';
+            document.getElementById('confirmBtn').style.display = req.status === 'needs_confirmation' ? '' : 'none';
 
             document.getElementById('editModal').classList.add('open');
         }
