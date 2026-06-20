@@ -52,6 +52,7 @@ class UpdateEventRequest extends FormRequest
             ],
 
             'isAllDay' => ['sometimes', 'boolean'],
+            'isRecurring' => ['sometimes', 'boolean'],
         ];
     }
 

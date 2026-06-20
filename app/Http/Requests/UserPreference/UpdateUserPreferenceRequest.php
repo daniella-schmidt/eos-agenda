@@ -30,13 +30,14 @@ class UpdateUserPreferenceRequest extends FormRequest
 
             'preferredStartTime' => [
                 'sometimes',
-                'date_format:H:i',
+                'nullable',
+                'date_format:H:i,H:i:s',
             ],
 
             'preferredEndTime' => [
                 'sometimes',
-                'date_format:H:i',
-                'after:preferredStartTime',
+                'nullable',
+                'date_format:H:i,H:i:s',
             ],
 
             'bufferBetweenEventsMinutes' => [

@@ -1,590 +1,1056 @@
+@php
+    use Carbon\CarbonImmutable;
+    use Carbon\CarbonInterface;
+    use Illuminate\Support\Str;
+
+    $statusLabels = [
+        'draft' => 'Pendente',
+        'confirmed' => 'Confirmado',
+        'cancelled' => 'Cancelado',
+    ];
+
+    $priorityLabels = [
+        'low' => 'Baixa',
+        'medium' => 'Média',
+        'high' => 'Alta',
+    ];
+
+    $defaultCalendar = $calendars->firstWhere('isDefault', true) ?? $calendars->first();
+
+    $calendarEvents = $events->filter(function ($event) use ($defaultCalendar) {
+        if (! $defaultCalendar) {
+            return false;
+        }
+
+        $eventCalendarId = $event->calendarId ?? $event->calendar_id ?? $event->calendar?->id;
+
+        return (int) $eventCalendarId === (int) $defaultCalendar->id;
+    });
+
+    $viewMode = request('view', 'month');
+
+    if (! in_array($viewMode, ['day', 'week', 'month', 'list'], true)) {
+        $viewMode = 'month';
+    }
+
+    try {
+        $anchorDate = CarbonImmutable::parse(request('date', now()->toDateString()))->locale('pt_BR');
+    } catch (\Throwable) {
+        $anchorDate = CarbonImmutable::now()->locale('pt_BR');
+    }
+
+    if ($viewMode === 'day') {
+        $periodStart = $anchorDate->startOfDay();
+        $periodEnd = $anchorDate->endOfDay();
+        $periodTitle = $anchorDate->translatedFormat('d \d\e F \d\e Y');
+    } elseif ($viewMode === 'week') {
+        $periodStart = $anchorDate->startOfWeek(CarbonInterface::MONDAY);
+        $periodEnd = $anchorDate->endOfWeek(CarbonInterface::SUNDAY);
+        $periodTitle = $periodStart->format('d/m') . ' - ' . $periodEnd->format('d/m/Y');
+    } else {
+        $periodStart = $anchorDate->startOfMonth()->startOfWeek(CarbonInterface::MONDAY);
+        $periodEnd = $anchorDate->endOfMonth()->endOfWeek(CarbonInterface::SUNDAY);
+        $periodTitle = $anchorDate->translatedFormat('F \d\e Y');
+    }
+
+    $days = collect();
+    $cursor = $periodStart;
+
+    while ($cursor->lte($periodEnd)) {
+        $days->push($cursor);
+        $cursor = $cursor->addDay();
+    }
+
+    $eventsByDay = $calendarEvents->groupBy(fn ($event) => $event->startAt?->format('Y-m-d'));
+
+    $periodEvents = $calendarEvents
+        ->filter(fn ($event) => $event->startAt && $event->startAt->between($periodStart, $periodEnd))
+        ->sortBy('startAt');
+
+    $previousDate = match ($viewMode) {
+        'day' => $anchorDate->subDay(),
+        'week' => $anchorDate->subWeek(),
+        default => $anchorDate->subMonth(),
+    };
+
+    $nextDate = match ($viewMode) {
+        'day' => $anchorDate->addDay(),
+        'week' => $anchorDate->addWeek(),
+        default => $anchorDate->addMonth(),
+    };
+
+    $createEventUrl = function ($day) use ($defaultCalendar) {
+        return route('events.create', [
+            'date'        => $day->toDateString(),
+            'calendar_id' => $defaultCalendar?->id,
+        ]);
+    };
+@endphp
+
 <x-app-layout>
-    <x-slot name="header">
-        <div class="eos-page-header">
+    {{-- Header intentionally omitted for the calendar page.
+        <div class="hidden">
             <div class="eos-page-header__left">
-                <h2 class="eos-page-title">Meus Calendários</h2>
+                @if ($defaultCalendar)
+                    <p class="mt-1 text-sm font-bold text-gray-500">
+                        {{ $defaultCalendar->name }}
+                    </p>
+                @endif
             </div>
-            <button id="openCreateModal" class="eos-btn eos-btn--primary">
-                <span>＋</span> Novo Calendário
-            </button>
+
+            @if ($defaultCalendar)
+                <a href="{{ $createEventUrl(now()) }}" class="eos-btn eos-btn--primary">
+                    <span>＋</span> Novo evento
+                </a>
+            @endif
         </div>
-    </x-slot>
+    --}}
 
-    <style>
-        /* ── EOS DESIGN TOKENS ─────────────────────────────── */
-        :root {
-            --teal:    #008f91;
-            --teal-m:  #00c1c4;
-            --teal-l:  #ccfeff;
-            --teal-xl: #e5ffff;
-            --pink:    #ff6bb3;
-            --orange:  #ffb76b;
-            --sun:     #ffe14d;
-            --dark:    #0d2b2b;
-            --white:   #ffffff;
-            --radius:  20px;
-            --border:  3px solid var(--dark);
-            --shadow:  5px 5px 0 var(--dark);
-        }
+    <div class="min-h-[calc(100vh-4rem)] bg-[#f6fbfb]">
+        <style>
+            .calendar-page {
+                max-width: 1440px;
+                margin: 0 auto;
+                padding: 24px;
+            }
 
-        /* ── PAGE HEADER ──────────────────────────────────── */
-        .eos-page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .eos-page-header__left { display: flex; flex-direction: column; gap: 4px; }
-        .eos-page-tag {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-weight: 900; font-size: .72rem; text-transform: uppercase; letter-spacing: 2px;
-            color: var(--teal); background: var(--teal-l);
-            padding: 4px 14px; border-radius: 50px; border: 2px solid var(--teal);
-            width: fit-content;
-        }
-        .eos-page-title {
-            
-            font-size: 1.6rem; color: var(--dark); margin: 0; font-weight: 700;
-        }
+            .calendar-card {
+                background: #ffffff;
+                border: 1px solid #dbe7e7;
+                border-radius: 8px;
+                box-shadow: 0 14px 35px rgba(13, 43, 43, .06);
+            }
 
-        /* ── BUTTONS ──────────────────────────────────────── */
-        .eos-btn {
-            font-family: 'Nunito', sans-serif; font-weight: 900; font-size: .9rem;
-            padding: 10px 22px; border-radius: 50px; cursor: pointer;
-            border: var(--border); transition: all .15s;
-            display: inline-flex; align-items: center; gap: 6px;
-            text-decoration: none;
-        }
-        .eos-btn--primary {
-            background: var(--teal); color: var(--white);
-            box-shadow: var(--shadow);
-        }
-        .eos-btn--primary:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--dark); }
-        .eos-btn--ghost {
-            background: var(--white); color: var(--dark);
-            box-shadow: 3px 3px 0 var(--dark);
-        }
-        .eos-btn--ghost:hover { background: var(--teal-l); transform: translate(-2px,-2px); }
-        .eos-btn--danger {
-            background: #fff0f0; color: #c0392b;
-            border-color: #c0392b; box-shadow: 3px 3px 0 #c0392b;
-        }
-        .eos-btn--danger:hover { background: #ffe0e0; transform: translate(-1px,-1px); }
-        .eos-btn--sm { padding: 6px 14px; font-size: .78rem; }
+            .calendar-toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 18px;
+                border-bottom: 1px solid #dbe7e7;
+            }
 
-        /* ── PAGE BODY ────────────────────────────────────── */
-        .eos-page-body {
-            max-width: 1280px; margin: 0 auto;
-            padding: 32px 24px;
-        }
+            .calendar-title {
+                font-size: 1.35rem;
+                font-weight: 900;
+                color: #0d2b2b;
+                text-transform: capitalize;
+            }
 
-        /* ── TOAST ────────────────────────────────────────── */
-        #eos-toast {
-            position: fixed; top: 24px; right: 24px; z-index: 9999;
-            display: flex; flex-direction: column; gap: 10px;
-            pointer-events: none;
-        }
-        .toast-item {
-            font-family: 'Nunito', sans-serif; font-weight: 800; font-size: .88rem;
-            padding: 12px 20px; border-radius: 14px; border: var(--border);
-            box-shadow: var(--shadow); color: var(--dark);
-            animation: toastIn .25s ease both;
-            pointer-events: all;
-        }
-        .toast-item--success { background: var(--teal-l); }
-        .toast-item--error   { background: #fff0f0; }
-        @keyframes toastIn { from { opacity:0; transform: translateY(-10px) scale(.94); } to { opacity:1; transform: none; } }
+            .calendar-subtitle {
+                font-size: .8rem;
+                font-weight: 900;
+                color: #008f91;
+                text-transform: uppercase;
+                letter-spacing: .18em;
+            }
 
-        /* ── EMPTY STATE ──────────────────────────────────── */
-        .eos-empty {
-            text-align: center; padding: 80px 24px;
-            display: flex; flex-direction: column; align-items: center; gap: 16px;
-        }
-        .eos-empty__icon {
-            width: 80px; height: 80px; border-radius: 20px;
-            background: var(--teal-l); border: var(--border);
-            box-shadow: var(--shadow);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2.4rem;
-        }
-        .eos-empty__title {  font-size: 1.4rem; color: var(--dark); }
-        .eos-empty__sub   { font-weight: 700; opacity: .6; max-width: 320px; line-height: 1.5; }
+            .calendar-actions {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
+            }
 
-        /* ── LOADING SKELETON ─────────────────────────────── */
-        .eos-skeleton-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .eos-skeleton-card {
-            background: var(--white); border: var(--border); border-radius: var(--radius);
-            padding: 24px; box-shadow: var(--shadow);
-            animation: pulse 1.4s ease-in-out infinite;
-        }
-        .skeleton-line {
-            background: var(--teal-l); border-radius: 8px; height: 14px; margin-bottom: 10px;
-        }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+            .calendar-nav,
+            .view-tab {
+                border: 1px solid #cfe0e0;
+                background: #ffffff;
+                color: #365050;
+                padding: 8px 12px;
+                font-size: .85rem;
+                font-weight: 800;
+                border-radius: 8px;
+                text-decoration: none;
+            }
 
-        /* ── CALENDAR GRID ────────────────────────────────── */
-        .eos-cal-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 22px;
-        }
+            .view-tab.is-active {
+                background: #0d2b2b;
+                border-color: #0d2b2b;
+                color: #ffffff;
+            }
 
-        /* ── CALENDAR CARD ────────────────────────────────── */
-        .eos-cal-card {
-            background: var(--white); border: var(--border); border-radius: var(--radius);
-            box-shadow: var(--shadow); cursor: pointer;
-            transition: transform .15s, box-shadow .15s;
-            position: relative; overflow: hidden;
-            display: flex; flex-direction: column;
-        }
-        .eos-cal-card:focus-within { outline: none; }
-        .eos-cal-card__stripe {
-            height: 8px; width: 100%;
-            background: var(--teal);
-        }
-        .eos-cal-card__body { padding: 20px 22px; flex: 1; }
-        .eos-cal-card__row  { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-        .eos-cal-card__name {
-             font-size: 1.15rem;
-             font-weight: 600;
-            color: var(--dark); margin-bottom: 4px;
-        }
-        .eos-cal-card__desc {
-            font-weight: 700; font-size: .83rem; opacity: .6;
-            line-height: 1.5; margin-bottom: 14px;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-        }
-        .eos-cal-card__badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-        .eos-badge {
-            font-weight: 900; font-size: .68rem; text-transform: uppercase; letter-spacing: .5px;
-            padding: 4px 10px; border-radius: 50px; border: 2px solid var(--dark);
-        }
-        .eos-badge--default  { background: var(--sun);   color: var(--dark); }
-        .eos-badge--inactive { background: #ffe0e0;     color: #c0392b; border-color: #c0392b; }
-        .eos-badge--count    { background: var(--teal-l); color: var(--teal); }
+            .calendar-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 360px;
+                gap: 18px;
+                padding: 18px;
+            }
 
-        .eos-cal-card__footer {
-            padding: 12px 22px 16px;
-            display: flex; gap: 6px; flex-wrap: wrap;
-            border-top: 2px dashed var(--teal-l);
-        }
+            .week-header {
+                display: grid;
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+                gap: 10px;
+                margin-bottom: 10px;
+            }
 
-        /* ── MODAL ────────────────────────────────────────── */
-        .eos-modal-backdrop {
-            position: fixed; inset: 0;
-            background: rgba(13,43,43,.55);
-            backdrop-filter: blur(4px);
-            display: none; align-items: center; justify-content: center;
-            z-index: 500; padding: 20px;
-        }
-        .eos-modal-backdrop.open { display: flex; }
-        .eos-modal {
-            background: var(--white); border: var(--border); border-radius: var(--radius);
-            box-shadow: 10px 10px 0 var(--dark);
-            width: 100%; max-width: 480px;
-            animation: modalIn .22s cubic-bezier(.34,1.56,.64,1) both;
-        }
-        @keyframes modalIn { from{opacity:0;transform:scale(.9) translateY(16px)}to{opacity:1;transform:none} }
-        .eos-modal__header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 20px 24px 0;
-        }
-        .eos-modal__title {  font-size: 1.3rem; color: var(--dark); }
-        .eos-modal__close {
-            background: var(--teal-l); border: var(--border); border-radius: 10px;
-            width: 36px; height: 36px; cursor: pointer; font-size: 1.1rem;
-            display: flex; align-items: center; justify-content: center;
-            transition: .15s;
-        }
-        .eos-modal__close:hover { background: #ffe0e0; border-color: #c0392b; }
-        .eos-modal__body { padding: 20px 24px 24px; }
+            .week-header span {
+                font-size: .72rem;
+                font-weight: 900;
+                color: #008f91;
+                text-transform: uppercase;
+                text-align: center;
+                letter-spacing: .12em;
+            }
 
-        /* ── FORM FIELDS ──────────────────────────────────── */
-        .eos-field { margin-bottom: 16px; }
-        .eos-field label {
-            display: block; font-weight: 900; font-size: .82rem;
-            text-transform: uppercase; letter-spacing: .5px;
-            color: var(--teal); margin-bottom: 6px;
-        }
-        .eos-field input[type="text"],
-        .eos-field textarea {
-            width: 100%; font-family: 'Nunito', sans-serif; font-weight: 700;
-            font-size: .95rem; padding: 10px 14px;
-            border: var(--border); border-radius: 12px;
-            background: var(--teal-xl); color: var(--dark);
-            transition: box-shadow .15s;
-            outline: none;
-        }
-        .eos-field input:focus,
-        .eos-field textarea:focus {
-            box-shadow: 0 0 0 3px var(--teal-l), var(--shadow);
-        }
-        .eos-field textarea { resize: vertical; min-height: 72px; }
+            .calendar-grid {
+                display: grid;
+                gap: 10px;
+            }
 
-        .eos-color-row {
-            display: flex; align-items: center; gap: 14px;
-        }
-        .eos-color-swatch {
-            width: 44px; height: 44px; border-radius: 12px;
-            border: var(--border); cursor: pointer; overflow: hidden;
-            box-shadow: 3px 3px 0 var(--dark); flex-shrink: 0;
-        }
-        .eos-color-swatch input[type="color"] {
-            width: 200%; height: 200%; margin: -50%; border: none;
-            cursor: pointer; background: none;
-        }
-        .eos-color-presets { display: flex; gap: 8px; flex-wrap: wrap; }
-        .eos-color-preset {
-            width: 28px; height: 28px; border-radius: 8px;
-            border: 2px solid transparent; cursor: pointer;
-            box-shadow: 2px 2px 0 var(--dark);
-        }
-        .eos-color-preset.active {
-            border-color: var(--dark); transform: scale(1.18);
-        }
+            .calendar-grid--month {
+                grid-template-columns: repeat(7, minmax(120px, 1fr));
+            }
 
-        .eos-checkbox-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 12px 14px; border-radius: 12px;
-            border: 2px dashed var(--teal); background: var(--teal-xl);
-        }
-        .eos-checkbox-row input[type="checkbox"] {
-            width: 20px; height: 20px; accent-color: var(--teal);
-            cursor: pointer;
-        }
-        .eos-checkbox-row span { font-weight: 800; font-size: .88rem; }
+            .calendar-grid--week {
+                grid-template-columns: repeat(7, minmax(150px, 1fr));
+                overflow-x: auto;
+            }
 
-        .eos-modal__actions {
-            display: flex; justify-content: flex-end; gap: 10px;
-            padding-top: 8px;
-        }
+            .calendar-grid--day {
+                grid-template-columns: 1fr;
+            }
 
-        /* ── CONFIRM DIALOG ───────────────────────────────── */
-        .eos-confirm {
-            background: var(--white); border: var(--border); border-radius: var(--radius);
-            box-shadow: 10px 10px 0 var(--dark);
-            width: 100%; max-width: 360px; padding: 28px 28px 24px;
-            animation: modalIn .22s cubic-bezier(.34,1.56,.64,1) both;
-            text-align: center;
-        }
-        .eos-confirm__icon { font-size: 2.8rem; margin-bottom: 10px; }
-        .eos-confirm__title {  font-size: 1.2rem; margin-bottom: 6px; }
-        .eos-confirm__sub { font-weight: 700; font-size: .88rem; opacity: .65; margin-bottom: 22px; }
-        .eos-confirm__actions { display: flex; gap: 10px; justify-content: center; }
+            .calendar-day {
+                position: relative;
+                min-height: 140px;
+                border: 1px solid #dbe7e7;
+                border-radius: 8px;
+                background: #fafdff;
+                padding: 12px;
+                cursor: pointer;
+                transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+            }
 
-        /* ── RESPONSIVE ───────────────────────────────────── */
-        @media (max-width: 640px) {
-            .eos-page-body { padding: 20px 16px; }
-            .eos-cal-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+            .calendar-grid--week .calendar-day {
+                min-height: 520px;
+            }
 
-    <div class="eos-page-body">
-        <!-- Toast container -->
-        <div id="eos-toast"></div>
+            .calendar-grid--day .calendar-day {
+                min-height: 560px;
+            }
 
-        <!-- Calendar list -->
-        <div id="calendarsList">
-            <!-- Loading skeleton -->
-            <div class="eos-skeleton-grid" id="skeletonGrid">
-                <div class="eos-skeleton-card">
-                    <div class="skeleton-line" style="width:60%"></div>
-                    <div class="skeleton-line" style="width:90%"></div>
-                    <div class="skeleton-line" style="width:40%"></div>
+            .calendar-day:hover,
+            .calendar-day.is-selected {
+                border-color: #008f91;
+                box-shadow: 0 12px 26px rgba(0, 143, 145, .12);
+                transform: translateY(-1px);
+            }
+
+            .calendar-day.is-outside-month {
+                opacity: .45;
+            }
+
+            .calendar-day.is-today {
+                border-color: #ff6bb3;
+            }
+
+            .calendar-day.has-events {
+                border-color: #008f91;
+                background: #f0ffff;
+            }
+
+            .month-event-summary {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                border-radius: 999px;
+                background: #ccfeff;
+                color: #006b6d;
+                padding: 6px 10px;
+                font-size: .78rem;
+                font-weight: 900;
+            }
+
+            .month-event-summary::before {
+                content: "";
+                width: 8px;
+                height: 8px;
+                border-radius: 999px;
+                background: #008f91;
+                box-shadow: 0 0 0 2px #ffffff;
+            }
+
+            .day-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+
+            .day-name {
+                font-size: .7rem;
+                font-weight: 900;
+                color: #748686;
+                text-transform: uppercase;
+                letter-spacing: .12em;
+            }
+
+            .day-number {
+                font-size: 1.15rem;
+                font-weight: 900;
+                color: #0d2b2b;
+            }
+
+            .day-create-action {
+                display: inline-flex;
+                width: 30px;
+                height: 30px;
+                align-items: center;
+                justify-content: center;
+                border-radius: 999px;
+                border: 2px solid #0d2b2b;
+                background: #008f91;
+                color: #ffffff;
+                font-weight: 900;
+                text-decoration: none;
+                opacity: 0;
+                transform: scale(.9);
+                transition: opacity .15s ease, transform .15s ease;
+            }
+
+            .calendar-day:hover .day-create-action,
+            .calendar-day.is-selected .day-create-action {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            .event-preview {
+                border-left: 5px solid var(--calendar-color, #008f91);
+                border-radius: 8px;
+                background: #ffffff;
+                padding: 9px;
+                box-shadow: 0 8px 18px rgba(13, 43, 43, .06);
+            }
+
+            .event-preview + .event-preview {
+                margin-top: 8px;
+            }
+
+            .event-preview.is-cancelled {
+                opacity: .55;
+                background: #f7f7f7;
+            }
+
+            .event-time {
+                font-size: .72rem;
+                font-weight: 900;
+                color: #008f91;
+            }
+
+            .event-title {
+                margin-top: 3px;
+                font-size: .82rem;
+                font-weight: 900;
+                color: #0d2b2b;
+            }
+
+            .event-meta {
+                margin-top: 3px;
+                font-size: .72rem;
+                font-weight: 700;
+                color: #6b7d7d;
+            }
+
+            .status-pill {
+                display: inline-flex;
+                align-items: center;
+                border-radius: 999px;
+                padding: 3px 8px;
+                background: #e5ffff;
+                color: #006b6d;
+                font-size: .72rem;
+                font-weight: 900;
+            }
+
+            .status-pill.is-high {
+                background: #fff1f7;
+                color: #b42369;
+            }
+
+            .day-details {
+                position: sticky;
+                top: 88px;
+                align-self: start;
+                padding: 18px;
+            }
+
+            .detail-event {
+                border: 1px solid #dbe7e7;
+                border-radius: 8px;
+                padding: 14px;
+                background: #fafdff;
+            }
+
+            .detail-event + .detail-event {
+                margin-top: 12px;
+            }
+
+            .empty-state {
+                border: 1px dashed #cfe0e0;
+                border-radius: 8px;
+                padding: 16px;
+                color: #748686;
+                font-size: .9rem;
+                font-weight: 700;
+                background: #ffffff;
+            }
+
+            .list-view {
+                padding: 18px;
+            }
+
+            .list-event {
+                display: grid;
+                grid-template-columns: 150px minmax(0, 1fr) auto;
+                gap: 14px;
+                align-items: center;
+                padding: 14px 0;
+                border-bottom: 1px solid #dbe7e7;
+            }
+
+            .detail-event.is-clickable {
+                cursor: pointer;
+                transition: border-color .15s ease, box-shadow .15s ease;
+            }
+
+            .detail-event.is-clickable:hover {
+                border-color: #008f91;
+                box-shadow: 0 4px 14px rgba(0, 143, 145, .14);
+            }
+
+            .cal-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 80;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 24px;
+            }
+
+            .cal-backdrop {
+                position: absolute;
+                inset: 0;
+                background: rgba(13, 43, 43, .35);
+                backdrop-filter: blur(3px);
+            }
+
+            .cal-modal {
+                position: relative;
+                width: min(760px, 100%);
+                max-height: calc(100vh - 48px);
+                overflow: auto;
+                background: #ffffff;
+                border: 1px solid #dbe7e7;
+                border-radius: 12px;
+                box-shadow: 0 24px 70px rgba(13, 43, 43, .22);
+            }
+
+            .cal-modal__header {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 18px;
+                border-bottom: 1px solid #dbe7e7;
+                background: #ffffff;
+            }
+
+            .cal-modal__body { padding: 18px; }
+
+            .cal-modal__eyebrow {
+                color: #008f91;
+                font-size: .72rem;
+                font-weight: 900;
+                letter-spacing: .18em;
+                text-transform: uppercase;
+            }
+
+            .cal-modal__title {
+                margin-top: 4px;
+                color: #0d2b2b;
+                font-size: 1.35rem;
+                font-weight: 900;
+            }
+
+            .cal-modal__close {
+                flex-shrink: 0;
+                width: 38px;
+                height: 38px;
+                border-radius: 999px;
+                border: 2px solid #0d2b2b;
+                background: #ffffff;
+                color: #0d2b2b;
+                font-size: 1.4rem;
+                font-weight: 900;
+                line-height: 1;
+                cursor: pointer;
+            }
+
+            .cal-modal__close:hover { background: #fff0f0; color: #c0392b; }
+
+            .cal-detail-card {
+                border: 1px solid #dbe7e7;
+                border-left: 6px solid var(--event-color, #008f91);
+                border-radius: 8px;
+                padding: 16px;
+                background: #fafdff;
+            }
+
+            .cal-detail-card__top {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+            }
+
+            .cal-detail-card__time { color: #008f91; font-size: .9rem; font-weight: 900; }
+            .cal-detail-card__heading { margin-top: 14px; color: #0d2b2b; font-size: 1.25rem; font-weight: 900; }
+            .cal-detail-card__desc { margin-top: 10px; color: #526767; font-size: .95rem; font-weight: 600; line-height: 1.6; }
+
+            .cal-detail-card__info {
+                margin-top: 16px;
+                display: grid;
+                gap: 10px;
+                color: #647878;
+                font-size: .9rem;
+                font-weight: 800;
+            }
+
+            .cal-detail-card__section {
+                margin-top: 18px;
+                padding-top: 14px;
+                border-top: 1px solid #dbe7e7;
+            }
+
+            .cal-detail-card__section-label {
+                margin-bottom: 8px;
+                color: #008f91;
+                font-size: .72rem;
+                font-weight: 900;
+                letter-spacing: .12em;
+                text-transform: uppercase;
+            }
+
+            .cal-chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+            .cal-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                border-radius: 999px;
+                border: 1px solid #cfe0e0;
+                background: #fff;
+                color: #0d2b2b;
+                padding: 6px 10px;
+                font-size: .82rem;
+                font-weight: 800;
+            }
+
+            .cal-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                min-height: 40px;
+                border-radius: 8px;
+                border: 2px solid #0d2b2b;
+                padding: 0 14px;
+                font-size: .86rem;
+                font-weight: 900;
+                text-decoration: none;
+                cursor: pointer;
+                transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+            }
+
+            .cal-btn:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 #0d2b2b; }
+            .cal-btn--ghost { background: #fff; color: #0d2b2b; }
+            .cal-btn--danger { background: #fff0f0; border-color: #c0392b; color: #c0392b; }
+
+            .cal-empty {
+                border: 1px dashed #cfe0e0;
+                border-radius: 8px;
+                padding: 16px;
+                background: #fff;
+                color: #647878;
+                font-size: .9rem;
+                font-weight: 700;
+            }
+
+            .is-hidden { display: none !important; }
+
+            @media (max-width: 1100px) {
+                .calendar-toolbar {
+                    align-items: flex-start;
+                    flex-direction: column;
+                }
+
+                .calendar-layout {
+                    grid-template-columns: 1fr;
+                }
+
+                .day-details {
+                    position: static;
+                }
+
+                .calendar-grid--month,
+                .calendar-grid--week {
+                    grid-template-columns: repeat(7, minmax(130px, 1fr));
+                    overflow-x: auto;
+                }
+
+                .list-event {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+
+        <div class="calendar-page">
+            @unless ($defaultCalendar)
+                <div class="calendar-card p-6">
+                    <h2 class="text-xl font-black text-[#0d2b2b]">
+                        Nenhum calendário padrão encontrado
+                    </h2>
+                    <p class="mt-2 text-sm font-semibold text-gray-500">
+                        Crie ou defina um calendário padrão para visualizar seus eventos.
+                    </p>
                 </div>
-                <div class="eos-skeleton-card">
-                    <div class="skeleton-line" style="width:50%"></div>
-                    <div class="skeleton-line" style="width:80%"></div>
-                    <div class="skeleton-line" style="width:35%"></div>
-                </div>
-                <div class="eos-skeleton-card">
-                    <div class="skeleton-line" style="width:70%"></div>
-                    <div class="skeleton-line" style="width:85%"></div>
-                    <div class="skeleton-line" style="width:50%"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+            @else
+                <section class="calendar-card">
+                    <div class="calendar-toolbar">
+                        <div>
+                            <p class="calendar-subtitle">Calendário padrão</p>
+                            <h2 class="calendar-title">{{ $periodTitle }}</h2>
+                            <p class="mt-1 text-sm font-bold text-gray-500">
+                                {{ $defaultCalendar->name }}
+                            </p>
+                        </div>
 
-    <!-- ── CALENDAR MODAL ──────────────────────────────────── -->
-    <div id="calendarModal" class="eos-modal-backdrop">
-        <div class="eos-modal">
-            <div class="eos-modal__header">
-                <h3 id="modalTitle" class="eos-modal__title">Novo Calendário</h3>
-                <button class="eos-modal__close" id="closeModal" aria-label="Fechar">✕</button>
-            </div>
-            <div class="eos-modal__body">
-                <form id="calendarForm">
-                    <input type="hidden" id="calendarId">
+                        <div class="calendar-actions">
+                            <a href="{{ route('calendars.index', ['view' => 'day', 'date' => $anchorDate->toDateString()]) }}"
+                               class="view-tab {{ $viewMode === 'day' ? 'is-active' : '' }}">
+                                Dia
+                            </a>
 
-                    <div class="eos-field">
-                        <label for="name">Nome do calendário</label>
-                        <input type="text" id="name" placeholder="Ex: Trabalho, Pessoal, Estudos…" required>
-                    </div>
+                            <a href="{{ route('calendars.index', ['view' => 'week', 'date' => $anchorDate->toDateString()]) }}"
+                               class="view-tab {{ $viewMode === 'week' ? 'is-active' : '' }}">
+                                Semana
+                            </a>
 
-                    <div class="eos-field">
-                        <label for="description">Descrição</label>
-                        <textarea id="description" placeholder="Uma descrição breve (opcional)…"></textarea>
-                    </div>
+                            <a href="{{ route('calendars.index', ['view' => 'month', 'date' => $anchorDate->toDateString()]) }}"
+                               class="view-tab {{ $viewMode === 'month' ? 'is-active' : '' }}">
+                                Mês
+                            </a>
 
-                    <div class="eos-field">
-                        <label>Cor</label>
-                        <div class="eos-color-row">
-                            <div class="eos-color-swatch">
-                                <input type="color" id="color" value="#008f91">
-                            </div>
-                            <div class="eos-color-presets">
-                                <div class="eos-color-preset" style="background:#008f91" data-color="#008f91" title="Teal"></div>
-                                <div class="eos-color-preset" style="background:#ff6bb3" data-color="#ff6bb3" title="Rosa"></div>
-                                <div class="eos-color-preset" style="background:#ffb76b" data-color="#ffb76b" title="Laranja"></div>
-                                <div class="eos-color-preset" style="background:#ffe14d" data-color="#ffe14d" title="Amarelo"></div>
-                                <div class="eos-color-preset" style="background:#7c3aed" data-color="#7c3aed" title="Roxo"></div>
-                                <div class="eos-color-preset" style="background:#16a34a" data-color="#16a34a" title="Verde"></div>
-                                <div class="eos-color-preset" style="background:#dc2626" data-color="#dc2626" title="Vermelho"></div>
-                                <div class="eos-color-preset" style="background:#0d2b2b" data-color="#0d2b2b" title="Dark"></div>
-                            </div>
+                            <a href="{{ route('calendars.index', ['view' => 'list', 'date' => $anchorDate->toDateString()]) }}"
+                               class="view-tab {{ $viewMode === 'list' ? 'is-active' : '' }}">
+                                Lista
+                            </a>
                         </div>
                     </div>
 
-                    <div class="eos-field">
-                        <label class="eos-checkbox-row" for="isDefault">
-                            <input type="checkbox" id="isDefault">
-                            <span>Definir como calendário padrão</span>
-                        </label>
-                    </div>
+                    @if ($viewMode === 'list')
+                        <div class="list-view">
+                            @forelse ($periodEvents as $event)
+                                @php
+                                    $status = $event->status instanceof BackedEnum ? $event->status->value : $event->status;
+                                    $priority = $event->priority instanceof BackedEnum ? $event->priority->value : $event->priority;
+                                @endphp
 
-                    <div class="eos-modal__actions">
-                        <button type="button" id="closeModalBtn" class="eos-btn eos-btn--ghost eos-btn--sm">Cancelar</button>
-                        <button type="submit" id="submitBtn" class="eos-btn eos-btn--primary eos-btn--sm">Salvar </button>
-                    </div>
-                </form>
-            </div>
+                                <article class="list-event">
+                                    <div class="text-sm font-black text-[#008f91]">
+                                        {{ $event->startAt?->format('d/m/Y H:i') }}
+                                        <br>
+                                        <span class="text-gray-400">
+                                            até {{ $event->endAt?->format('H:i') }}
+                                        </span>
+                                    </div>
+
+                                    <div class="min-w-0">
+                                        <h3 class="truncate text-base font-black text-[#0d2b2b]">
+                                            {{ $event->title }}
+                                        </h3>
+
+                                        @if ($event->description)
+                                            <p class="mt-1 text-sm font-semibold text-gray-500">
+                                                {{ Str::limit($event->description, 120) }}
+                                            </p>
+                                        @endif
+
+                                        @if ($event->location || $event->meetingURL)
+                                            <p class="mt-1 text-sm font-bold text-gray-500">
+                                                {{ $event->location ?: $event->meetingURL }}
+                                            </p>
+                                        @endif
+                                    </div>
+
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="status-pill">
+                                            {{ $statusLabels[$status] ?? $status }}
+                                        </span>
+
+                                        <span class="status-pill {{ $priority === 'high' ? 'is-high' : '' }}">
+                                            {{ $priorityLabels[$priority] ?? $priority }}
+                                        </span>
+
+                                        @if ($event->createByAI)
+                                            <span class="status-pill">IA</span>
+                                        @endif
+                                    </div>
+                                </article>
+                            @empty
+                                <div class="empty-state">
+                                    Nenhum evento encontrado neste período.
+                                </div>
+                            @endforelse
+                        </div>
+                    @else
+                        <div class="calendar-layout">
+                            <div class="min-w-0">
+                                @if ($viewMode !== 'day')
+                                    <div class="week-header">
+                                        <span>Seg</span>
+                                        <span>Ter</span>
+                                        <span>Qua</span>
+                                        <span>Qui</span>
+                                        <span>Sex</span>
+                                        <span>Sáb</span>
+                                        <span>Dom</span>
+                                    </div>
+                                @endif
+
+                                <div class="calendar-grid calendar-grid--{{ $viewMode }}">
+                                    @foreach ($days as $day)
+                                        @php
+                                            $dayKey = $day->format('Y-m-d');
+                                            $dayEvents = $eventsByDay->get($dayKey, collect())->sortBy('startAt');
+                                            $isToday = $day->isSameDay(now());
+                                            $isOutsideMonth = $viewMode === 'month' && ! $day->isSameMonth($anchorDate);
+                                            $hasEvents = $dayEvents->isNotEmpty();
+                                        @endphp
+
+                                        <div
+                                            class="calendar-day js-calendar-day {{ $isToday ? 'is-today' : '' }} {{ $isOutsideMonth ? 'is-outside-month' : '' }} {{ $hasEvents ? 'has-events' : '' }}"
+                                            data-day="{{ $dayKey }}"
+                                        >
+                                            <div class="day-header">
+                                                <div>
+                                                    <p class="day-name">
+                                                        {{ $day->translatedFormat('D') }}
+                                                    </p>
+                                                    <h3 class="day-number">
+                                                        {{ $day->format('d') }}
+                                                    </h3>
+                                                </div>
+
+                                                <a
+                                                    href="{{ $createEventUrl($day) }}"
+                                                    class="day-create-action"
+                                                    title="Criar evento em {{ $day->format('d/m/Y') }}"
+                                                    onclick="event.stopPropagation()"
+                                                >
+                                                    +
+                                                </a>
+                                            </div>
+
+                                            @if ($viewMode === 'month')
+                                                @if ($hasEvents)
+                                                    <div class="month-event-summary">
+                                                        {{ $dayEvents->count() }} evento(s)
+                                                    </div>
+                                                @else
+                                                    <div class="empty-state">
+                                                        Sem eventos.
+                                                    </div>
+                                                @endif
+                                            @else
+                                                @forelse ($dayEvents->take(12) as $event)
+                                                    @php
+                                                        $status = $event->status instanceof BackedEnum ? $event->status->value : $event->status;
+                                                    @endphp
+
+                                                    <article
+                                                        class="event-preview {{ $status === 'cancelled' ? 'is-cancelled' : '' }}"
+                                                        style="--calendar-color: {{ $defaultCalendar->color ?: '#008f91' }}"
+                                                    >
+                                                        <div class="event-time">
+                                                            {{ $event->startAt?->format('H:i') }} - {{ $event->endAt?->format('H:i') }}
+                                                        </div>
+                                                    </article>
+                                                @empty
+                                                    <div class="empty-state">
+                                                        Sem eventos.
+                                                    </div>
+                                                @endforelse
+                                            @endif
+                                        </div>
+
+                                        <template data-day-template="{{ $dayKey }}">
+                                            <div class="mb-4 flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p class="calendar-subtitle">Dia selecionado</p>
+                                                    <h3 class="text-xl font-black text-[#0d2b2b]">
+                                                        {{ $day->translatedFormat('d \d\e F') }}
+                                                    </h3>
+                                                    <p class="mt-1 text-sm font-bold text-gray-500">
+                                                        {{ $dayEvents->count() }} evento(s)
+                                                    </p>
+                                                </div>
+
+                                                <a
+                                                    href="{{ $createEventUrl($day) }}"
+                                                    class="eos-btn eos-btn--primary"
+                                                >
+                                                    +
+                                                </a>
+                                            </div>
+
+                                            @forelse ($dayEvents as $event)
+                                                @php
+                                                    $status = $event->status instanceof BackedEnum ? $event->status->value : $event->status;
+                                                    $priority = $event->priority instanceof BackedEnum ? $event->priority->value : $event->priority;
+                                                @endphp
+
+                                                <article class="detail-event is-clickable" data-event-id="{{ $event->id }}" title="Ver detalhes do evento">
+                                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                                        <div class="text-sm font-black text-[#008f91]">
+                                                            {{ $event->startAt?->format('H:i') }}
+                                                            -
+                                                            {{ $event->endAt?->format('H:i') }}
+                                                        </div>
+
+                                                        <div class="flex flex-wrap gap-1">
+                                                            <span class="status-pill">
+                                                                {{ $statusLabels[$status] ?? $status }}
+                                                            </span>
+
+                                                            <span class="status-pill {{ $priority === 'high' ? 'is-high' : '' }}">
+                                                                {{ $priorityLabels[$priority] ?? $priority }}
+                                                            </span>
+
+                                                            @if ($event->createByAI)
+                                                                <span class="status-pill">Criado por IA</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    <h4 class="mt-3 text-base font-black text-[#0d2b2b]">
+                                                        {{ $event->title }}
+                                                    </h4>
+
+                                                    @if ($event->description)
+                                                        <p class="mt-2 text-sm font-semibold text-gray-600">
+                                                            {{ $event->description }}
+                                                        </p>
+                                                    @endif
+
+                                                    <div class="mt-3 space-y-1 text-sm font-bold text-gray-500">
+                                                        @if ($event->location)
+                                                            <p>Local: {{ $event->location }}</p>
+                                                        @endif
+
+                                                        @if ($event->meetingURL)
+                                                            <p>
+                                                                Reunião:
+                                                                <a href="{{ $event->meetingURL }}" class="text-[#008f91]" target="_blank">
+                                                                    {{ $event->meetingURL }}
+                                                                </a>
+                                                            </p>
+                                                        @endif
+
+                                                        @if ($event->timezone)
+                                                            <p>Fuso horário: {{ $event->timezone }}</p>
+                                                        @endif
+
+                                                        @if ($event->participants_count ?? false)
+                                                        <p>Participantes: {{ $event->participants_count }}</p>
+                                                        @endif
+                                                    </div>
+                                                </article>
+                                            @empty
+                                                <div class="empty-state">
+                                                    Este dia ainda não possui eventos.
+                                                    Clique no botão <strong>+</strong> para criar um novo compromisso.
+                                                </div>
+                                            @endforelse
+                                        </template>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <aside class="calendar-card day-details">
+                                <div id="selectedDayDetails">
+                                    <div class="empty-state">
+                                        Clique em um dia do calendário para ver os eventos detalhados ou criar um novo evento.
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                    @endif
+                </section>
+            @endunless
         </div>
-    </div>
 
-    <!-- ── CONFIRM DELETE MODAL ──────────────────────────── -->
-    <div id="confirmModal" class="eos-modal-backdrop">
-        <div class="eos-confirm">
-            <div class="eos-confirm__icon">🗑️</div>
-            <div class="eos-confirm__title">Excluir calendário?</div>
-            <div class="eos-confirm__sub">Esta ação não pode ser desfeita. Os eventos vinculados podem ser afetados.</div>
-            <div class="eos-confirm__actions">
-                <button class="eos-btn eos-btn--ghost eos-btn--sm" id="confirmCancel">Cancelar</button>
-                <button class="eos-btn eos-btn--danger eos-btn--sm" id="confirmDelete">Sim, excluir</button>
-            </div>
+        <div id="calEventOverlay" class="cal-overlay is-hidden">
+            <div class="cal-backdrop" data-cal-close></div>
+            <section class="cal-modal">
+                <div class="cal-modal__header">
+                    <div>
+                        <p class="cal-modal__eyebrow">Detalhes do evento</p>
+                        <h2 id="calModalTitle" class="cal-modal__title">Evento selecionado</h2>
+                    </div>
+                    <button class="cal-modal__close" type="button" data-cal-close>×</button>
+                </div>
+                <div id="calModalBody" class="cal-modal__body">
+                    <div class="cal-empty">Carregando detalhes...</div>
+                </div>
+            </section>
         </div>
-    </div>
 
-    <script>
-        const csrf = document.querySelector('meta[name="csrf-token"]').content;
-        let pendingDeleteId = null;
+        <script>
+            const dayCards = document.querySelectorAll('.js-calendar-day');
+            const detailContainer = document.getElementById('selectedDayDetails');
 
-        /* ── TOAST ─────────────────────────────────────────── */
-        function toast(msg, type = 'success') {
-            const el = document.createElement('div');
-            el.className = `toast-item toast-item--${type}`;
-            el.textContent = msg;
-            document.getElementById('eos-toast').appendChild(el);
-            setTimeout(() => el.remove(), 3200);
-        }
+            function selectDay(dayKey) {
+                dayCards.forEach((card) => {
+                    card.classList.toggle('is-selected', card.dataset.day === dayKey);
+                });
 
-        /* ── API ──────────────────────────────────────────── */
-        async function api(url, opts = {}) {
-            const res = await fetch(url, {
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-                ...opts,
-            });
-            if (!res.ok) throw new Error(await res.text());
-            if (res.status === 204) return null;
-            return res.json();
-        }
+                const template = document.querySelector(`[data-day-template="${dayKey}"]`);
 
-        /* ── RENDER CALENDARS ─────────────────────────────── */
-        async function loadCalendars() {
-            try {
-                const { data } = await api('/api/calendars');
-                const container = document.getElementById('calendarsList');
-
-                if (!data.length) {
-                    container.innerHTML = `
-                        <div class="eos-empty">
-                            <div class="eos-empty__icon"></div>
-                            <div class="eos-empty__title">Nenhum calendário ainda</div>
-                            <p class="eos-empty__sub">Crie seu primeiro calendário para começar a organizar seus eventos.</p>
-                            <button class="eos-btn eos-btn--primary" onclick="openCreateModal()">＋ Criar</button>
-                        </div>`;
-                    return;
+                if (template && detailContainer) {
+                    detailContainer.innerHTML = template.innerHTML;
                 }
-
-                container.innerHTML = `<div class="eos-cal-grid">${data.map(renderCard).join('')}</div>`;
-            } catch (e) {
-                toast('Erro ao carregar calendários', 'error');
             }
-        }
 
-        function renderCard(cal) {
-            const stripe = cal.color || 'var(--teal)';
-            const countLabel = cal.eventsCount !== undefined ? `${cal.eventsCount} evento${cal.eventsCount !== 1 ? 's' : ''}` : '';
-            return `
-            <div class="eos-cal-card" onclick="window.location.href='/calendars/${cal.id}'">
-                <div class="eos-cal-card__stripe" style="background:${stripe}"></div>
-                <div class="eos-cal-card__body">
-                    <div class="eos-cal-card__name">${escHtml(cal.name)}</div>
-                    <div class="eos-cal-card__desc">${cal.description ? escHtml(cal.description) : 'Sem descrição'}</div>
-                    <div class="eos-cal-card__badges">
-                        ${cal.isDefault ? '<span class="eos-badge eos-badge--default">⭐ Padrão</span>' : ''}
-                        ${!cal.isActive ? '<span class="eos-badge eos-badge--inactive">Inativo</span>' : ''}
-                        ${countLabel ? `<span class="eos-badge eos-badge--count">📅 ${countLabel}</span>` : ''}
-                    </div>
-                </div>
-                <div class="eos-cal-card__footer" onclick="event.stopPropagation()">
-                    <button class="eos-btn eos-btn--ghost eos-btn--sm" onclick="openEditModal(${cal.id})">Editar</button>
-                    ${!cal.isDefault ? `<button class="eos-btn eos-btn--ghost eos-btn--sm" onclick="makeDefault(${cal.id})">Tornar padrão</button>` : ''}
-                    <button class="eos-btn eos-btn--danger eos-btn--sm" onclick="confirmDeleteModal(${cal.id})">Excluir</button>
-                </div>
-            </div>`;
-        }
-
-        function escHtml(str) {
-            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        }
-
-        /* ── ACTIONS ──────────────────────────────────────── */
-        async function makeDefault(id) {
-            try {
-                await api(`/api/calendars/${id}/make-default`, { method: 'POST' });
-                toast('Calendário definido como padrão');
-                loadCalendars();
-            } catch { toast('Erro ao definir padrão', 'error'); }
-        }
-
-        function confirmDeleteModal(id) {
-            pendingDeleteId = id;
-            document.getElementById('confirmModal').classList.add('open');
-        }
-
-        async function deleteCalendar(id) {
-            try {
-                await api(`/api/calendars/${id}`, { method: 'DELETE' });
-                toast('Calendário excluído');
-                loadCalendars();
-            } catch { toast('Erro ao excluir', 'error'); }
-        }
-
-        /* ── MODAL ────────────────────────────────────────── */
-        function openModal() {
-            document.getElementById('calendarModal').classList.add('open');
-        }
-        function closeModal() {
-            document.getElementById('calendarModal').classList.remove('open');
-        }
-
-        function openCreateModal() {
-            document.getElementById('modalTitle').textContent = 'Novo Calendário';
-            document.getElementById('calendarForm').reset();
-            document.getElementById('calendarId').value = '';
-            document.getElementById('color').value = '#008f91';
-            syncColorPresets('#008f91');
-            document.getElementById('submitBtn').textContent = 'Criar calendário';
-            openModal();
-        }
-
-        async function openEditModal(id) {
-            try {
-                const { data } = await api(`/api/calendars/${id}`);
-                document.getElementById('modalTitle').textContent = 'Editar Calendário';
-                document.getElementById('name').value = data.name;
-                document.getElementById('description').value = data.description || '';
-                document.getElementById('color').value = data.color || '#008f91';
-                document.getElementById('isDefault').checked = data.isDefault;
-                document.getElementById('calendarId').value = id;
-                document.getElementById('submitBtn').textContent = 'Salvar alterações';
-                syncColorPresets(data.color || '#008f91');
-                openModal();
-            } catch { toast('Erro ao carregar calendário', 'error'); }
-        }
-
-        /* ── COLOR PRESETS ────────────────────────────────── */
-        function syncColorPresets(hex) {
-            document.querySelectorAll('.eos-color-preset').forEach(el => {
-                el.classList.toggle('active', el.dataset.color === hex);
+            dayCards.forEach((card) => {
+                card.addEventListener('click', () => {
+                    selectDay(card.dataset.day);
+                });
             });
-        }
 
-        document.querySelectorAll('.eos-color-preset').forEach(el => {
-            el.addEventListener('click', () => {
-                document.getElementById('color').value = el.dataset.color;
-                syncColorPresets(el.dataset.color);
+            // — Event detail modal —
+
+            const calOverlay  = document.getElementById('calEventOverlay');
+            const calModalTitle = document.getElementById('calModalTitle');
+            const calModalBody  = document.getElementById('calModalBody');
+            const editBaseUrl   = "{{ url('/events') }}";
+            const csrfToken     = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            function calOpenModal()  { calOverlay.classList.remove('is-hidden'); document.body.style.overflow = 'hidden'; }
+            function calCloseModal() { calOverlay.classList.add('is-hidden');    document.body.style.overflow = ''; }
+
+            document.querySelectorAll('[data-cal-close]').forEach(el => el.addEventListener('click', calCloseModal));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') calCloseModal(); });
+
+            async function calApi(url) {
+                const res = await fetch(url, {
+                    headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                });
+                if (!res.ok) throw new Error('Não foi possível carregar o evento.');
+                return res.json();
+            }
+
+            const calEscape = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            const calDate   = v => v ? new Date(v).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '-';
+            const calStatus   = s => ({ draft:'Rascunho', confirmed:'Confirmado', cancelled:'Cancelado' }[s] || s || '-');
+            const calPriority = p => ({ low:'Baixa', medium:'Média', high:'Alta' }[p] || p || '-');
+
+            async function calShowEvent(id) {
+                calModalTitle.textContent = 'Carregando...';
+                calModalBody.innerHTML = '<div class="cal-empty">Carregando detalhes...</div>';
+                calOpenModal();
+
+                try {
+                    const payload = await calApi(`/api/events/${id}`);
+                    const ev = payload.data;
+
+                    calModalTitle.textContent = ev.title || 'Evento';
+
+                    const participants = ev.participants || [];
+                    const reminders    = ev.reminders   || [];
+                    const statusClass  = ev.status   === 'cancelled' ? 'is-cancelled' : '';
+                    const priorClass   = ev.priority  === 'high'     ? 'is-high'      : '';
+
+                    calModalBody.innerHTML = `
+                        <article class="cal-detail-card" style="--event-color:${calEscape(ev.calendar?.color || '#008f91')}">
+                            <div class="cal-detail-card__top">
+                                <div class="cal-detail-card__time">
+                                    ${calDate(ev.startAt)} até ${calDate(ev.endAt)}
+                                </div>
+                                <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                                    <span class="status-pill ${statusClass}">${calEscape(calStatus(ev.status))}</span>
+                                    <span class="status-pill ${priorClass}">Prioridade ${calEscape(calPriority(ev.priority))}</span>
+                                    ${ev.createByAI ? '<span class="status-pill">Criado por IA</span>' : ''}
+                                </div>
+                            </div>
+
+                            <h3 class="cal-detail-card__heading">${calEscape(ev.title || '-')}</h3>
+
+                            <p class="cal-detail-card__desc">
+                                ${ev.description ? calEscape(ev.description) : 'Sem descrição cadastrada.'}
+                            </p>
+
+                            <div class="cal-detail-card__info">
+                                <p><strong>Calendário:</strong> ${calEscape(ev.calendar?.name || '-')}</p>
+                                <p><strong>Local:</strong> ${calEscape(ev.location || '-')}</p>
+                                <p><strong>Reunião:</strong> ${ev.meetingURL ? `<a href="${calEscape(ev.meetingURL)}" target="_blank" style="color:#008f91">${calEscape(ev.meetingURL)}</a>` : '-'}</p>
+                                <p><strong>Fuso horário:</strong> ${calEscape(ev.timezone || '-')}</p>
+                                ${ev.isAllDay    ? '<p><strong>Tipo:</strong> Evento de dia todo</p>'    : ''}
+                                ${ev.isRecurring ? '<p><strong>Recorrência:</strong> Evento recorrente</p>' : ''}
+                            </div>
+
+                            <div class="cal-detail-card__section">
+                                <p class="cal-detail-card__section-label">Participantes</p>
+                                <div class="cal-chip-list">
+                                    ${participants.length
+                                        ? participants.map(p => `<span class="cal-chip">${calEscape(p.name || p.email || 'Participante')}${p.email ? ` · ${calEscape(p.email)}` : ''} · ${calEscape(p.role || 'attendee')} · ${calEscape(p.responseStatus || 'pending')}</span>`).join('')
+                                        : '<div class="cal-empty">Nenhum participante.</div>'}
+                                </div>
+                            </div>
+
+                            <div class="cal-detail-card__section">
+                                <p class="cal-detail-card__section-label">Lembretes</p>
+                                <div class="cal-chip-list">
+                                    ${reminders.length
+                                        ? reminders.map(r => `<span class="cal-chip">${calEscape(r.type || 'notification')} · ${Number(r.minutesBefore)} min antes</span>`).join('')
+                                        : '<div class="cal-empty">Nenhum lembrete.</div>'}
+                                </div>
+                            </div>
+
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;">
+                                <a href="${editBaseUrl}/${calEscape(ev.id)}/edit" class="cal-btn cal-btn--ghost">Editar evento</a>
+                            </div>
+                        </article>
+                    `;
+                } catch (err) {
+                    calModalBody.innerHTML = `<div class="cal-empty">${calEscape(err.message)}</div>`;
+                }
+            }
+
+            // Delegação de clique nos eventos do painel lateral (conteúdo inserido dinamicamente)
+            document.getElementById('selectedDayDetails').addEventListener('click', function (e) {
+                const article = e.target.closest('[data-event-id]');
+                if (article) calShowEvent(article.dataset.eventId);
             });
-        });
 
-        document.getElementById('color').addEventListener('input', e => {
-            syncColorPresets(e.target.value);
-        });
+            // — Calendário —
 
-        /* ── FORM SUBMIT ──────────────────────────────────── */
-        document.getElementById('calendarForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.textContent = 'Salvando…';
+            const today = new Date().toISOString().slice(0, 10);
+            const todayCard = document.querySelector(`[data-day="${today}"]`);
+            const firstCard = document.querySelector('.js-calendar-day');
 
-            const payload = {
-                name: document.getElementById('name').value,
-                description: document.getElementById('description').value || null,
-                color: document.getElementById('color').value || null,
-                isDefault: document.getElementById('isDefault').checked,
-            };
-            const id = document.getElementById('calendarId').value;
-            const url = id ? `/api/calendars/${id}` : '/api/calendars';
-            const method = id ? 'PATCH' : 'POST';
-
-            try {
-                await api(url, { method, body: JSON.stringify(payload) });
-                closeModal();
-                toast(id ? 'Calendário atualizado ✓' : 'Calendário criado ✓');
-                loadCalendars();
-            } catch {
-                toast('Erro ao salvar calendário', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = id ? 'Salvar alterações' : 'Criar calendário';
+            if (todayCard) {
+                selectDay(today);
+            } else if (firstCard) {
+                selectDay(firstCard.dataset.day);
             }
-        });
-
-        /* ── EVENT BINDINGS ───────────────────────────────── */
-        document.getElementById('openCreateModal').addEventListener('click', openCreateModal);
-        document.getElementById('closeModal').addEventListener('click', closeModal);
-        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-
-        document.getElementById('calendarModal').addEventListener('click', e => {
-            if (e.target === e.currentTarget) closeModal();
-        });
-
-        document.getElementById('confirmCancel').addEventListener('click', () => {
-            document.getElementById('confirmModal').classList.remove('open');
-            pendingDeleteId = null;
-        });
-
-        document.getElementById('confirmDelete').addEventListener('click', async () => {
-            document.getElementById('confirmModal').classList.remove('open');
-            if (pendingDeleteId) await deleteCalendar(pendingDeleteId);
-            pendingDeleteId = null;
-        });
-
-        document.getElementById('confirmModal').addEventListener('click', e => {
-            if (e.target === e.currentTarget) {
-                document.getElementById('confirmModal').classList.remove('open');
-                pendingDeleteId = null;
-            }
-        });
-
-        // Init
-        loadCalendars();
-    </script>
+        </script>
+    </div>
 </x-app-layout>

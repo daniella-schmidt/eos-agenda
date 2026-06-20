@@ -31,7 +31,7 @@ class EventController extends Controller
 
         $events = Event::query()
             ->where('userId', $request->user()->id)
-            ->with('calendar')
+            ->with(['calendar', 'participants'])
             ->withCount(['participants', 'reminders'])
 
             ->when(
@@ -104,6 +104,7 @@ class EventController extends Controller
                     )
                 ),
                 isAllDay: $request->boolean('isAllDay'),
+                isRecurring: $request->boolean('isRecurring'),
             )
         );
 
@@ -147,6 +148,7 @@ class EventController extends Controller
                     'status',
                     'priority',
                     'isAllDay',
+                    'isRecurring',
                 ]),
             )
         );
@@ -184,7 +186,7 @@ class EventController extends Controller
 
         $events = $calendar->events()
             ->where('userId', $request->user()->id)
-            ->with('calendar')
+            ->with(['calendar', 'participants'])
             ->withCount(['participants', 'reminders'])
             ->when(
                 $request->validated('status'),

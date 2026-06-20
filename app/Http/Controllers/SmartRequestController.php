@@ -14,14 +14,14 @@ use App\Services\SmartRequest\GetSmartRequestsByStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Gate;
 
 class SmartRequestController extends Controller
 {
 
     public function update(Request $request, SmartRequest $smartRequest)
     {
-        Gate::authorize('update', $smartRequest);
+        abort_unless($smartRequest->userId === $request->user()?->id, 403);
+
         $validated = $request->validate([
             'extractedTitle' => 'nullable|string',
             'extractedDescription' => 'nullable|string',
@@ -29,8 +29,10 @@ class SmartRequestController extends Controller
             'extractedEndAt' => 'nullable|date',
             'extractedParticipants' => 'nullable|array',
         ]);
+
         $smartRequest->update($validated);
-        return response()->json(['data' => $smartRequest]);
+
+        return (new SmartRequestResource($smartRequest->fresh()))->response();
     }
     public function byStatus(
         Request $request,
@@ -73,6 +75,13 @@ class SmartRequestController extends Controller
             'message' => 'Evento criado com sucesso.',
             'event_id' => $event->id,
         ], 201);
+    }
+
+    public function show(SmartRequest $smartRequest): JsonResponse
+    {
+        abort_unless($smartRequest->userId === request()->user()?->id, 403);
+
+        return (new SmartRequestResource($smartRequest))->response();
     }
 
     public function destroy(

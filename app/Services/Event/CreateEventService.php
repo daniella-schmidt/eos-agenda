@@ -69,7 +69,7 @@ class CreateEventService
                 'source' => EventSource::Manual,
 
                 'isAllDay' => $dto->isAllDay,
-                'isRecurring' => false,
+                'isRecurring' => $dto->isRecurring,
                 'createdByAI' => false,
             ]);
         });

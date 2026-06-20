@@ -1,55 +1,59 @@
-<section class="space-y-6">
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Delete Account') }}
-        </h2>
+<p class="profile-desc" style="margin-top: 0;">
+    Uma vez exclu&iacute;da, sua conta e todos os dados associados ser&atilde;o removidos permanentemente.
+    Fa&ccedil;a o download de qualquer informa&ccedil;&atilde;o que deseja manter antes de prosseguir.
+</p>
 
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
-        </p>
-    </header>
-
-    <x-danger-button
+<div class="profile-actions">
+    <button
+        type="button"
+        class="profile-btn profile-btn--danger"
         x-data=""
         x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Delete Account') }}</x-danger-button>
+    >
+        Excluir minha conta
+    </button>
+</div>
 
-    <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
-        <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
-            @csrf
-            @method('delete')
+<x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
+    <form method="post" action="{{ route('profile.destroy') }}" style="padding: 24px;">
+        @csrf
+        @method('delete')
 
-            <h2 class="text-lg font-medium text-gray-900">
-                {{ __('Are you sure you want to delete your account?') }}
-            </h2>
+        <h2 style="font-size: 1.1rem; font-weight: 900; color: #a32222;">
+            Tem certeza que deseja excluir sua conta?
+        </h2>
 
-            <p class="mt-1 text-sm text-gray-600">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
-            </p>
+        <p style="margin-top: 8px; font-size: .88rem; font-weight: 600; color: #647878; line-height: 1.5;">
+            Esta a&ccedil;&atilde;o &eacute; permanente e irrevers&iacute;vel. Todos os seus dados ser&atilde;o removidos.
+            Digite sua senha para confirmar.
+        </p>
 
-            <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
+        <div class="profile-field" style="margin-top: 20px; margin-bottom: 0;">
+            <label class="profile-label" for="delete_password">Sua senha</label>
+            <input
+                id="delete_password"
+                class="profile-input"
+                type="password"
+                name="password"
+                placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+            >
+            @error('password', 'userDeletion')
+                <span class="profile-input-error">{{ $message }}</span>
+            @enderror
+        </div>
 
-                <x-text-input
-                    id="password"
-                    name="password"
-                    type="password"
-                    class="mt-1 block w-3/4"
-                    placeholder="{{ __('Password') }}"
-                />
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+            <button
+                type="button"
+                class="profile-btn profile-btn--ghost"
+                x-on:click="$dispatch('close')"
+            >
+                Cancelar
+            </button>
 
-                <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
-            </div>
-
-            <div class="mt-6 flex justify-end">
-                <x-secondary-button x-on:click="$dispatch('close')">
-                    {{ __('Cancel') }}
-                </x-secondary-button>
-
-                <x-danger-button class="ms-3">
-                    {{ __('Delete Account') }}
-                </x-danger-button>
-            </div>
-        </form>
-    </x-modal>
-</section>
+            <button type="submit" class="profile-btn profile-btn--danger">
+                Confirmar exclus&atilde;o
+            </button>
+        </div>
+    </form>
+</x-modal>

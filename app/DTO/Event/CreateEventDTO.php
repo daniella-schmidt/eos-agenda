@@ -20,6 +20,7 @@ class CreateEventDTO
         public readonly EventStatus $status,
         public readonly EventPriority $priority,
         public readonly bool $isAllDay,
+        public readonly bool $isRecurring,
     ) {
     }
 }

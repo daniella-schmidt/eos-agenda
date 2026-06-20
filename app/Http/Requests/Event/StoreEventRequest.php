@@ -43,6 +43,7 @@ class StoreEventRequest extends FormRequest
             ],
 
             'isAllDay' => ['sometimes', 'boolean'],
+            'isRecurring' => ['sometimes', 'boolean'],
         ];
     }
 }

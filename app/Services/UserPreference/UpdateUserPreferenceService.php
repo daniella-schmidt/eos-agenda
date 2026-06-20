@@ -36,7 +36,7 @@ class UpdateUserPreferenceService
     private function normalizeAttributes(array $attributes): array
     {
         foreach (['preferredStartTime', 'preferredEndTime'] as $field) {
-            if (array_key_exists($field, $attributes) && strlen($attributes[$field]) === 5) {
+            if (array_key_exists($field, $attributes) && is_string($attributes[$field]) && strlen($attributes[$field]) === 5) {
                 $attributes[$field] .= ':00';
             }
         }
@@ -45,9 +45,13 @@ class UpdateUserPreferenceService
     }
 
     private function validateTimeRange(
-        string $preferredStartTime,
-        string $preferredEndTime
+        ?string $preferredStartTime,
+        ?string $preferredEndTime
     ): void {
+        if ($preferredStartTime === null || $preferredEndTime === null) {
+            return;
+        }
+
         if ($preferredEndTime <= $preferredStartTime) {
             throw ValidationException::withMessages([
                 'preferredEndTime' => [

@@ -9,14 +9,48 @@ use App\Http\Controllers\EventSuggestionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SmartRequestController;
 use App\Http\Controllers\UserPreferenceController;
+use App\Models\Calendar;
+use App\Models\Event;
+use App\Models\EventReminder;
+use App\Models\SmartRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('landing');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
+Route::get('/dashboard', function (Request $request) {
+    $user = $request->user();
+    $calendars = Calendar::query()
+        ->where('userId', $user->id)
+        ->where('isActive', true)
+        ->orderByDesc('isDefault')
+        ->orderBy('name')
+        ->get();
+
+    $events = Event::query()
+        ->where('userId', $user->id)
+        ->with('calendar')
+        ->withCount(['participants', 'reminders'])
+        ->orderBy('startAt')
+        ->get();
+
+    $eventReminders = EventReminder::query()
+        ->with('event.calendar')
+        ->whereHas('event', fn ($query) => $query->where('userId', $user->id))
+        ->get()
+        ->sortBy(fn ($reminder) => $reminder->event?->startAt
+            ? $reminder->event->startAt->copy()->subMinutes($reminder->minutesBefore)
+            : now()->addYears(10))
+        ->take(5)
+        ->values();
+
+    return view('dashboard', compact(
+        'calendars',
+        'events',
+        'eventReminders',
+    ));
 })->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -48,8 +82,12 @@ Route::middleware('auth')->group(function () {
         return view('event-participant-tester');
     })->name('event-participant-tester');
 
+    Route::get('/user-preferences', function () {
+        return view('user-preferences.index');
+    })->name('user-preferences.index');
+
     Route::get('/user-preference-show-tester', function () {
-        return view('user-preferences.show-tester');
+        return view('user-preferences.configure-tester');
     })->name('user-preferences.show-tester');
 
     Route::get('/user-preference-update-tester', function () {
@@ -60,8 +98,23 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/calendars', function () {
-        return view('calendars.index');
+    Route::get('/calendars', function (Request $request) {
+        $calendars = Calendar::query()
+            ->where('userId', $request->user()->id)
+            ->where('isActive', true)
+            ->withCount('events')
+            ->orderByDesc('isDefault')
+            ->orderBy('name')
+            ->get();
+
+        $events = Event::query()
+            ->where('userId', $request->user()->id)
+            ->with('calendar')
+            ->withCount(['participants', 'reminders'])
+            ->orderBy('startAt')
+            ->get();
+
+        return view('calendars.index', compact('calendars', 'events'));
     })->name('calendars.index');
 
     Route::get('/calendars/{calendar}', [CalendarController::class, 'show'])
@@ -70,6 +123,28 @@ Route::middleware('auth')->group(function () {
     Route::get('/smart-requests', function () {
         return view('smart-requests.index');
     })->name('smart-requests.index');
+
+    Route::get('/smart-requests/{smartRequest}/suggestions', function (SmartRequest $smartRequest) {
+        abort_unless($smartRequest->userId === request()->user()->id, 403);
+
+        return view('event-suggestion.index', compact('smartRequest'));
+    })->name('smart-requests.suggestions.index');
+
+    Route::get('/contacts', function () {
+        return view('contacts.index');
+    })->name('contacts.index');
+
+    Route::get('/events', function () {
+        return view('events.index');
+    })->name('events.index');
+
+    Route::get('/events/create', function () {
+        return view('events.create');
+    })->name('events.create');
+
+    Route::get('/events/{id}/edit', function ($id) {
+        return view('events.edit', ['eventId' => $id]);
+    })->name('events.edit');
 
     Route::prefix('api')->group(function () {
         Route::get('/user-preferences', [UserPreferenceController::class, 'show'])
@@ -108,16 +183,30 @@ Route::middleware('auth')->group(function () {
             ->name('smart-requests.destroy');
 
         Route::post('/calendars/{calendar}/make-default', [CalendarController::class, 'makeDefault'])
-            ->name('calendars.make-default');
+            ->name('api.calendars.make-default');
 
         Route::resource('calendars', CalendarController::class)
+            ->names([
+                'index' => 'api.calendars.index',
+                'store' => 'api.calendars.store',
+                'show' => 'api.calendars.show',
+                'update' => 'api.calendars.update',
+                'destroy' => 'api.calendars.destroy',
+            ])
             ->except(['create', 'edit']);
 
         Route::resource('contacts', ContactController::class)
+            ->names([
+                'index' => 'api.contacts.index',
+                'store' => 'api.contacts.store',
+                'show' => 'api.contacts.show',
+                'update' => 'api.contacts.update',
+                'destroy' => 'api.contacts.destroy',
+            ])
             ->except(['create', 'edit']);
 
         Route::post('/events/{event}/cancel', [EventController::class, 'cancel'])
-            ->name('events.cancel');
+            ->name('api.events.cancel');
 
         Route::get('/events/{event}/participants', [EventParticipantController::class, 'index'])
             ->name('event-participants.index');
@@ -153,6 +242,13 @@ Route::middleware('auth')->group(function () {
             ->name('event-reminders.destroy');
 
         Route::resource('events', EventController::class)
+            ->names([
+                'index' => 'api.events.index',
+                'store' => 'api.events.store',
+                'show' => 'api.events.show',
+                'update' => 'api.events.update',
+                'destroy' => 'api.events.destroy',
+            ])
             ->except(['create', 'edit']);
     });
 });
