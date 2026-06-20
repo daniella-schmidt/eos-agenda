@@ -54,45 +54,33 @@ Route::get('/dashboard', function (Request $request) {
 })->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/calendar-tester', function () {
-        return view('calendar-tester');
-    })->name('calendar-tester');
+    Route::get('/events', function () {
+        return view('events.index');
+    })->name('events.page');
 
-    Route::get('/smart-request-tester', function () {
-        return view('smart-request-tester');
-    })->name('smart-request-tester');
+    Route::get('/event-suggestions', function () {
+        return view('event-suggestions.index');
+    })->name('event-suggestions.page');
 
-    Route::get('/event-tester', function () {
-        return view('event-tester');
-    })->name('event-tester');
+    Route::get('/event-reminders', function () {
+        return view('event-reminders.index');
+    })->name('event-reminders.page');
 
-    Route::get('/event-suggestion-tester', function () {
-        return view('event-suggestion-tester');
-    })->name('event-suggestion-tester');
+    Route::get('/contacts', function () {
+        return view('contacts.index');
+    })->name('contacts.page');
 
-    Route::get('/event-reminder-tester', function () {
-        return view('event-reminder-tester');
-    })->name('event-reminder-tester');
+    Route::get('/event-participants', function () {
+        return view('event-participants.index');
+    })->name('event-participants.page');
 
-    Route::get('/contact-tester', function () {
-        return view('contact-tester');
-    })->name('contact-tester');
+    Route::get('/preferences', function () {
+        return view('user-preferences.show.index');
+    })->name('user-preferences.page');
 
-    Route::get('/event-participant-tester', function () {
-        return view('event-participant-tester');
-    })->name('event-participant-tester');
-
-    Route::get('/user-preferences', function () {
-        return view('user-preferences.index');
-    })->name('user-preferences.index');
-
-    Route::get('/user-preference-show-tester', function () {
-        return view('user-preferences.configure-tester');
-    })->name('user-preferences.show-tester');
-
-    Route::get('/user-preference-update-tester', function () {
-        return view('user-preferences.update-tester');
-    })->name('user-preferences.update-tester');
+    Route::get('/preferences/edit', function () {
+        return view('user-preferences.edit.index');
+    })->name('user-preferences.edit-page');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -117,7 +105,7 @@ Route::middleware('auth')->group(function () {
         return view('calendars.index', compact('calendars', 'events'));
     })->name('calendars.index');
 
-    Route::get('/calendars/{calendar}', [CalendarController::class, 'show'])
+    Route::get('/calendars/{calendar}', [CalendarController::class, 'showCalendar'])
         ->name('calendars.show');
 
     Route::get('/smart-requests', function () {

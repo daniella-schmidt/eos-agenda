@@ -1,0 +1,141 @@
+:root {
+    --teal: #008f91;
+    --teal-m: #00c1c4;
+    --teal-l: #ccfeff;
+    --teal-xl: #e5ffff;
+    --pink: #ff6bb3;
+    --orange: #ffb76b;
+    --sun: #ffe14d;
+    --dark: #0d2b2b;
+    --white: #ffffff;
+    --radius: 20px;
+    --border: 3px solid var(--dark);
+    --shadow: 5px 5px 0 var(--dark);
+}
+
+.eos-app-body {
+    font-family: 'Nunito', sans-serif;
+    color: var(--dark);
+    background: linear-gradient(155deg, #e5ffff 0%, #d0feff 42%, #ffd6ec 100%);
+}
+
+.eos-app-shell {
+    min-height: 100vh;
+    background: transparent;
+}
+
+.eos-app-body nav {
+    background: rgba(255, 255, 255, .86);
+    border-bottom: var(--border);
+    backdrop-filter: blur(12px);
+}
+
+.eos-app-body header {
+    background: rgba(255, 255, 255, .76);
+    border-bottom: var(--border);
+    box-shadow: none;
+}
+
+.eos-app-body h1,
+.eos-app-body h2,
+.eos-app-body h3 {
+    color: var(--dark);
+    font-family: 'Righteous', cursive;
+    font-weight: 900;
+}
+
+.eos-app-body main > div,
+.eos-app-body .py-8 {
+    position: relative;
+}
+
+.eos-app-body main section > .rounded,
+.eos-app-body main .bg-white.shadow,
+.eos-app-body main .bg-white {
+    border: var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.eos-app-body main .bg-gray-950 {
+    background: var(--dark);
+    border: var(--border);
+    border-radius: var(--radius);
+    box-shadow: 8px 8px 0 var(--teal);
+}
+
+.eos-app-body input,
+.eos-app-body textarea,
+.eos-app-body select {
+    border: var(--border);
+    border-radius: 14px;
+    background: var(--white);
+    color: var(--dark);
+    font-weight: 700;
+}
+
+.eos-app-body input:focus,
+.eos-app-body textarea:focus,
+.eos-app-body select:focus {
+    border-color: var(--dark);
+    box-shadow: 0 0 0 3px var(--teal-l), var(--shadow);
+}
+
+.eos-app-body label {
+    color: var(--dark);
+    font-weight: 900;
+}
+
+.eos-app-body button,
+.eos-app-body .eos-btn {
+    border: var(--border);
+    border-radius: 999px;
+    box-shadow: 4px 4px 0 var(--dark);
+    font-weight: 900;
+    transition: transform .15s, box-shadow .15s, background-color .15s;
+}
+
+.eos-app-body button:hover,
+.eos-app-body .eos-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--dark);
+}
+
+.eos-app-body main code {
+    display: none;
+}
+
+.eos-app-body pre {
+    border-radius: 14px;
+}
+
+.eos-app-body .text-blue-700,
+.eos-app-body .text-green-700,
+.eos-app-body .text-purple-700 {
+    color: var(--teal);
+}
+
+.eos-app-body .bg-blue-700,
+.eos-app-body .bg-green-700,
+.eos-app-body .bg-purple-700,
+.eos-app-body .bg-gray-900 {
+    background: var(--teal);
+}
+
+.eos-app-body .bg-red-700,
+.eos-app-body .bg-red-600 {
+    background: var(--pink);
+}
+
+.eos-app-body .bg-amber-600 {
+    background: var(--orange);
+    color: var(--dark);
+}
+
+@media (max-width: 640px) {
+    .eos-app-body main section > .rounded,
+    .eos-app-body main .bg-white.shadow,
+    .eos-app-body main .bg-white {
+        box-shadow: 3px 3px 0 var(--dark);
+    }
+}
