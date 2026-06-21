@@ -86,21 +86,6 @@
     font-weight: 900;
 }
 
-.eos-app-body button,
-.eos-app-body .eos-btn {
-    border: var(--border);
-    border-radius: 999px;
-    box-shadow: 4px 4px 0 var(--dark);
-    font-weight: 900;
-    transition: transform .15s, box-shadow .15s, background-color .15s;
-}
-
-.eos-app-body button:hover,
-.eos-app-body .eos-btn:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 var(--dark);
-}
-
 .eos-app-body main code {
     display: none;
 }

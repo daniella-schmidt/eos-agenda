@@ -1,190 +1,182 @@
-const csrf = document.querySelector('meta[name="csrf-token"]').content;
-let pendingDeleteId = null;
+(() => {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-function toast(msg, type = 'success') {
-    const container = document.getElementById('eos-toast');
-    const el = document.createElement('div');
-    el.className = `toast-item toast-item--${type}`;
-    el.textContent = msg;
-    container.appendChild(el);
-    setTimeout(() => el.remove(), 3200);
-}
+    const editBaseUrl = document.querySelector('[data-cal-edit-base-url]')?.dataset?.calEditBaseUrl
+        || window.__CAL_EDIT_BASE_URL__
+        || '';
 
-async function api(url, opts = {}) {
-    const res = await fetch(url, {
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        ...opts,
-    });
-    if (!res.ok) throw new Error(await res.text());
-    if (res.status === 204) return null;
-    return res.json();
-}
+    const root = document;
 
-async function loadCalendars() {
-    try {
-        const { data } = await api('/api/calendars');
-        const container = document.getElementById('calendarsList');
-        if (!data.length) {
-            container.innerHTML = `
-                <div class="eos-empty">
-                    <div class="eos-empty__icon">📅</div>
-                    <div class="eos-empty__title">Nenhum calendário ainda</div>
-                    <p class="eos-empty__sub">Crie seu primeiro calendário para começar a organizar seus eventos.</p>
-                    <button class="eos-btn eos-btn--primary" onclick="window.openCreateModal()">＋ Criar</button>
-                </div>`;
-            return;
+    const dayCards = root.querySelectorAll('.js-calendar-day');
+    const detailContainer = root.getElementById('selectedDayDetails');
+
+    function selectDay(dayKey) {
+        dayCards.forEach((card) => {
+            card.classList.toggle('is-selected', card.dataset.day === dayKey);
+        });
+
+        const template = root.querySelector(`[data-day-template="${dayKey}"]`);
+
+        if (template && detailContainer) {
+            detailContainer.innerHTML = template.innerHTML;
         }
-        container.innerHTML = `<div class="eos-cal-grid">${data.map(renderCard).join('')}</div>`;
-    } catch (e) {
-        toast('Erro ao carregar calendários', 'error');
     }
-}
 
-function renderCard(cal) {
-    const stripe = cal.color || 'var(--teal)';
-    const countLabel = cal.eventsCount !== undefined ? `${cal.eventsCount} evento${cal.eventsCount !== 1 ? 's' : ''}` : '';
-    return `
-        <div class="eos-cal-card" onclick="window.location.href='/calendars/${cal.id}'">
-            <div class="eos-cal-card__stripe" style="background:${stripe}"></div>
-            <div class="eos-cal-card__body">
-                <div class="eos-cal-card__name">${escapeHtml(cal.name)}</div>
-                <div class="eos-cal-card__desc">${cal.description ? escapeHtml(cal.description) : 'Sem descrição'}</div>
-                <div class="eos-cal-card__badges">
-                    ${cal.isDefault ? '<span class="eos-badge eos-badge--default">⭐ Padrão</span>' : ''}
-                    ${!cal.isActive ? '<span class="eos-badge eos-badge--inactive">Inativo</span>' : ''}
-                    ${countLabel ? `<span class="eos-badge eos-badge--count">📅 ${countLabel}</span>` : ''}
-                </div>
-            </div>
-            <div class="eos-cal-card__footer" onclick="event.stopPropagation()">
-                <button class="eos-btn eos-btn--ghost eos-btn--sm" onclick="window.openEditModal(${cal.id})">Editar</button>
-                ${!cal.isDefault ? `<button class="eos-btn eos-btn--ghost eos-btn--sm" onclick="window.makeDefault(${cal.id})">Tornar padrão</button>` : ''}
-                <button class="eos-btn eos-btn--danger eos-btn--sm" onclick="window.confirmDeleteModal(${cal.id})">Excluir</button>
-            </div>
-        </div>`;
-}
-
-async function makeDefault(id) {
-    try {
-        await api(`/api/calendars/${id}/make-default`, { method: 'POST' });
-        toast('Calendário definido como padrão');
-        loadCalendars();
-    } catch { toast('Erro ao definir padrão', 'error'); }
-}
-
-function confirmDeleteModal(id) {
-    pendingDeleteId = id;
-    document.getElementById('confirmModal').classList.add('open');
-}
-
-async function deleteCalendar(id) {
-    try {
-        await api(`/api/calendars/${id}`, { method: 'DELETE' });
-        toast('Calendário excluído');
-        loadCalendars();
-    } catch { toast('Erro ao excluir', 'error'); }
-}
-
-function openModal() {
-    document.getElementById('calendarModal').classList.add('open');
-}
-function closeModal() {
-    document.getElementById('calendarModal').classList.remove('open');
-}
-
-function openCreateModal() {
-    document.getElementById('modalTitle').textContent = 'Novo Calendário';
-    document.getElementById('calendarForm').reset();
-    document.getElementById('calendarId').value = '';
-    document.getElementById('color').value = '#008f91';
-    syncColorPresets('#008f91');
-    document.getElementById('submitBtn').textContent = 'Criar calendário';
-    openModal();
-}
-
-async function openEditModal(id) {
-    try {
-        const { data } = await api(`/api/calendars/${id}`);
-        document.getElementById('modalTitle').textContent = 'Editar Calendário';
-        document.getElementById('name').value = data.name;
-        document.getElementById('description').value = data.description || '';
-        document.getElementById('color').value = data.color || '#008f91';
-        document.getElementById('isDefault').checked = data.isDefault;
-        document.getElementById('calendarId').value = id;
-        document.getElementById('submitBtn').textContent = 'Salvar alterações';
-        syncColorPresets(data.color || '#008f91');
-        openModal();
-    } catch { toast('Erro ao carregar calendário', 'error'); }
-}
-
-function syncColorPresets(hex) {
-    document.querySelectorAll('.eos-color-preset').forEach(el => {
-        el.classList.toggle('active', el.dataset.color === hex);
+    dayCards.forEach((card) => {
+        card.addEventListener('click', () => {
+            selectDay(card.dataset.day);
+        });
     });
-}
 
-document.querySelectorAll('.eos-color-preset').forEach(el => {
-    el.addEventListener('click', () => {
-        document.getElementById('color').value = el.dataset.color;
-        syncColorPresets(el.dataset.color);
+    // — Event detail modal —
+    const calOverlay = root.getElementById('calEventOverlay');
+    const calModalTitle = root.getElementById('calModalTitle');
+    const calModalBody = root.getElementById('calModalBody');
+
+    function calOpenModal() {
+        calOverlay?.classList.remove('is-hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function calCloseModal() {
+        calOverlay?.classList.add('is-hidden');
+        document.body.style.overflow = '';
+    }
+
+    root.querySelectorAll('[data-cal-close]').forEach((el) => el.addEventListener('click', calCloseModal));
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') calCloseModal();
     });
-});
-document.getElementById('color').addEventListener('input', e => syncColorPresets(e.target.value));
 
-document.getElementById('calendarForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.textContent = 'Salvando…';
-    const payload = {
-        name: document.getElementById('name').value,
-        description: document.getElementById('description').value || null,
-        color: document.getElementById('color').value || null,
-        isDefault: document.getElementById('isDefault').checked,
-    };
-    const id = document.getElementById('calendarId').value;
-    const url = id ? `/api/calendars/${id}` : '/api/calendars';
-    const method = id ? 'PATCH' : 'POST';
-    try {
-        await api(url, { method, body: JSON.stringify(payload) });
-        closeModal();
-        toast(id ? 'Calendário atualizado ✓' : 'Calendário criado ✓');
-        loadCalendars();
-    } catch {
-        toast('Erro ao salvar calendário', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = id ? 'Salvar alterações' : 'Criar calendário';
+    async function calApi(url) {
+        const res = await fetch(url, {
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+        });
+        if (!res.ok) throw new Error('Não foi possível carregar o evento.');
+        return res.json();
     }
-});
 
-document.getElementById('openCreateModal').addEventListener('click', openCreateModal);
-document.getElementById('closeModal').addEventListener('click', closeModal);
-document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-document.getElementById('calendarModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-document.getElementById('confirmCancel').addEventListener('click', () => {
-    document.getElementById('confirmModal').classList.remove('open');
-    pendingDeleteId = null;
-});
-document.getElementById('confirmDelete').addEventListener('click', async () => {
-    document.getElementById('confirmModal').classList.remove('open');
-    if (pendingDeleteId) await deleteCalendar(pendingDeleteId);
-    pendingDeleteId = null;
-});
-document.getElementById('confirmModal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) {
-        document.getElementById('confirmModal').classList.remove('open');
-        pendingDeleteId = null;
+    const calEscape = (v) => String(v ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"');
+
+    const calDate = (v) => v
+        ? new Date(v).toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        })
+        : '-';
+
+    const calStatus = (s) => ({ draft: 'Rascunho', confirmed: 'Confirmado', cancelled: 'Cancelado' }[s] || s || '-');
+    const calPriority = (p) => ({ low: 'Baixa', medium: 'Média', high: 'Alta' }[p] || p || '-');
+
+    async function calShowEvent(id) {
+        if (!calModalBody || !calModalTitle) return;
+
+        calModalTitle.textContent = 'Carregando...';
+        calModalBody.innerHTML = '<div class="cal-empty">Carregando detalhes...</div>';
+        calOpenModal();
+
+        try {
+            const payload = await calApi(`/api/events/${id}`);
+            const ev = payload.data;
+
+            calModalTitle.textContent = ev.title || 'Evento';
+
+            const participants = ev.participants || [];
+            const reminders = ev.reminders || [];
+            const statusClass = ev.status === 'cancelled' ? 'is-cancelled' : '';
+            const priorClass = ev.priority === 'high' ? 'is-high' : '';
+
+            calModalBody.innerHTML = `
+                <article class="cal-detail-card" style="--event-color:${calEscape(ev.calendar?.color || '#008f91')}">
+                    <div class="cal-detail-card__top">
+                        <div class="cal-detail-card__time">
+                            ${calDate(ev.startAt)} até ${calDate(ev.endAt)}
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                            <span class="status-pill ${statusClass}">${calEscape(calStatus(ev.status))}</span>
+                            <span class="status-pill ${priorClass}">Prioridade ${calEscape(calPriority(ev.priority))}</span>
+                            ${ev.createByAI ? '<span class="status-pill">Criado por IA</span>' : ''}
+                        </div>
+                    </div>
+
+                    <h3 class="cal-detail-card__heading">${calEscape(ev.title || '-')}</h3>
+
+                    <p class="cal-detail-card__desc">
+                        ${ev.description ? calEscape(ev.description) : 'Sem descrição cadastrada.'}
+                    </p>
+
+                    <div class="cal-detail-card__info">
+                        <p><strong>Calendário:</strong> ${calEscape(ev.calendar?.name || '-')}</p>
+                        <p><strong>Local:</strong> ${calEscape(ev.location || '-')}</p>
+                        <p><strong>Reunião:</strong> ${
+                            ev.meetingURL
+                                ? `<a href="${calEscape(ev.meetingURL)}" target="_blank" style="color:#008f91">${calEscape(ev.meetingURL)}</a>`
+                                : '-'
+                        }</p>
+                        <p><strong>Fuso horário:</strong> ${calEscape(ev.timezone || '-')}</p>
+                        ${ev.isAllDay ? '<p><strong>Tipo:</strong> Evento de dia todo</p>' : ''}
+                        ${ev.isRecurring ? '<p><strong>Recorrência:</strong> Evento recorrente</p>' : ''}
+                    </div>
+
+                    <div class="cal-detail-card__section">
+                        <p class="cal-detail-card__section-label">Participantes</p>
+                        <div class="cal-chip-list">
+                            ${participants.length
+                                ? participants.map(p =>
+                                    `<span class="cal-chip">${calEscape(p.name || p.email || 'Participante')}${p.email ? ` · ${calEscape(p.email)}` : ''} · ${calEscape(p.role || 'attendee')} · ${calEscape(p.responseStatus || 'pending')}</span>`
+                                ).join('')
+                                : '<div class="cal-empty">Nenhum participante.</div>'
+                            }
+                        </div>
+                    </div>
+
+                    <div class="cal-detail-card__section">
+                        <p class="cal-detail-card__section-label">Lembretes</p>
+                        <div class="cal-chip-list">
+                            ${reminders.length
+                                ? reminders.map(r =>
+                                    `<span class="cal-chip">${calEscape(r.type || 'notification')} · ${Number(r.minutesBefore)} min antes</span>`
+                                ).join('')
+                                : '<div class="cal-empty">Nenhum lembrete.</div>'
+                            }
+                        </div>
+                    </div>
+
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;">
+                        <a href="${editBaseUrl}/${calEscape(ev.id)}/edit" class="cal-btn cal-btn--ghost">Editar evento</a>
+                    </div>
+                </article>
+            `;
+        } catch (err) {
+            calModalBody.innerHTML = `<div class="cal-empty">${calEscape(err.message)}</div>`;
+        }
     }
-});
 
-function escapeHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+    // Delegação de clique nos eventos do painel lateral (conteúdo inserido dinamicamente)
+    const selectedDayDetails = document.getElementById('selectedDayDetails');
+    if (selectedDayDetails) {
+        selectedDayDetails.addEventListener('click', function (e) {
+            const article = e.target.closest('[data-event-id]');
+            if (article) calShowEvent(article.dataset.eventId);
+        });
+    }
 
-window.openCreateModal = openCreateModal;
-window.openEditModal = openEditModal;
-window.makeDefault = makeDefault;
-window.confirmDeleteModal = confirmDeleteModal;
-window.loadCalendars = loadCalendars;
+    // Init: seleciona hoje (ou primeiro card)
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCard = document.querySelector(`[data-day="${today}"]`);
+    const firstCard = document.querySelector('.js-calendar-day');
 
-loadCalendars();
+    if (todayCard) {
+        selectDay(today);
+    } else if (firstCard) {
+        selectDay(firstCard.dataset.day);
+    }
+})();
+

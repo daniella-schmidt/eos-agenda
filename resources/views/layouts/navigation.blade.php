@@ -40,16 +40,16 @@
             <div class="flex min-w-0">
                 <div class="flex shrink-0 items-center">
                     <a href="{{ route('dashboard') }}" class="group inline-flex items-center gap-2" aria-label="Ir para o dashboard">
-                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#0d2b2b] bg-[#ccfeff] text-lg font-black text-[#008f91] shadow-[3px_3px_0_#0d2b2b] transition group-hover:-translate-y-0.5">
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-lg font-black text-[#008f91] transition group-hover:-translate-y-0.5">
                             EO<span class="text-[#ff6bb3]">S</span>
                         </span>
-                        <span class="hidden text-sm font-bold text-[#0d2b2b] lg:inline">Agenda Inteligente</span>
+                        <span class="hidden text-sm font-bold text-[#0d2b2b] lg:inline">Agenda</span>
                     </a>
                 </div>
 
                 <div class="hidden sm:-my-px sm:ms-10 sm:flex sm:items-center sm:gap-6">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        Dashboard
+                    Home
                     </x-nav-link>
 
                     <x-dropdown align="left" width="48">
@@ -148,7 +148,7 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden border-t border-gray-100 bg-white sm:hidden">
         <div class="space-y-1 pb-3 pt-2">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                Dashboard
+                Home
             </x-responsive-nav-link>
 
             @foreach ($allLinks as $link)

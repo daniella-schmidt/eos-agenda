@@ -228,6 +228,16 @@ Route::middleware('auth')->group(function () {
 
         Route::delete('/event-reminders/{eventReminder}', [EventReminderController::class, 'destroy'])
             ->name('event-reminders.destroy');
+        
+        // Preferências do usuário (página)
+        Route::get('/user-preferences', function () {
+            return view('user-preferences.index');
+        })->name('user-preferences.index');
+
+        // Testador de lembretes (redireciona para a lista de lembretes)
+        Route::get('/event-reminder-tester', function () {
+            return redirect()->route('event-reminders.page');
+        })->name('event-reminder-tester');
 
         Route::resource('events', EventController::class)
             ->names([

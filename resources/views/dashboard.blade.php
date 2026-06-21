@@ -65,321 +65,17 @@
         'medium' => 'M&eacute;dia',
         'high' => 'Alta',
     ];
-
 @endphp
 
 <x-app-layout>
     <div class="min-h-[calc(100vh-4rem)] bg-[#f6fbfb]">
-        <style>
-            .dashboard-shell {
-                display: grid;
-                grid-template-columns: 260px minmax(0, 1fr);
-                gap: 24px;
-                max-width: 1440px;
-                margin: 0 auto;
-                padding: 24px;
-            }
-
-            .dashboard-card {
-                background: #ffffff;
-                border: 1px solid #dbe7e7;
-                border-radius: 8px;
-                box-shadow: 0 14px 35px rgba(13, 43, 43, .06);
-            }
-
-            .dashboard-sidebar {
-                position: sticky;
-                top: 88px;
-                height: calc(100vh - 112px);
-                overflow: auto;
-                padding: 18px;
-            }
-
-            .sidebar-link {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 10px;
-                padding: 10px 12px;
-                border-radius: 8px;
-                color: #365050;
-                font-size: .92rem;
-                font-weight: 700;
-                text-decoration: none;
-                transition: background .15s ease, color .15s ease;
-            }
-
-            .sidebar-link:hover,
-            .sidebar-link.is-active {
-                background: #ccfeff;
-                color: #0d2b2b;
-            }
-
-            .calendar-dot {
-                width: 10px;
-                height: 10px;
-                border-radius: 999px;
-                border: 2px solid #0d2b2b;
-                background: #008f91;
-                flex: none;
-            }
-
-            .dashboard-topbar {
-                display: grid;
-                grid-template-columns: minmax(220px, 1fr) minmax(260px, 420px) auto;
-                gap: 16px;
-                align-items: center;
-                padding: 18px;
-            }
-
-            .search-input,
-            .smart-input {
-                width: 100%;
-                border: 1px solid #cfe0e0;
-                border-radius: 8px;
-                background: #ffffff;
-                color: #0d2b2b;
-                font-size: .95rem;
-                outline: none;
-                transition: border-color .15s ease, box-shadow .15s ease;
-            }
-
-            .search-input {
-                padding: 12px 14px;
-            }
-
-            .smart-input {
-                min-height: 88px;
-                resize: vertical;
-                padding: 14px;
-            }
-
-            .search-input:focus,
-            .smart-input:focus {
-                border-color: #008f91;
-                box-shadow: 0 0 0 3px rgba(0, 143, 145, .12);
-            }
-
-            .eos-action {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                min-height: 42px;
-                border-radius: 8px;
-                border: 2px solid #0d2b2b;
-                padding: 0 16px;
-                font-size: .9rem;
-                font-weight: 900;
-                text-decoration: none;
-                transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
-            }
-
-            .eos-action--primary {
-                background: #008f91;
-                color: #ffffff;
-                box-shadow: 3px 3px 0 #0d2b2b;
-            }
-
-            .eos-action--secondary {
-                background: #ffffff;
-                color: #0d2b2b;
-            }
-
-            .eos-action--pink {
-                background: #ff6bb3;
-                color: #ffffff;
-                box-shadow: 3px 3px 0 #0d2b2b;
-            }
-
-            .eos-action:hover {
-                transform: translate(-1px, -1px);
-                box-shadow: 4px 4px 0 #0d2b2b;
-            }
-
-            .view-tab {
-                border: 1px solid #cfe0e0;
-                background: #ffffff;
-                color: #365050;
-                padding: 8px 12px;
-                font-size: .85rem;
-                font-weight: 800;
-                border-radius: 8px;
-                text-decoration: none;
-            }
-
-            .view-tab.is-active {
-                background: #0d2b2b;
-                border-color: #0d2b2b;
-                color: #ffffff;
-            }
-
-            .dashboard-calendar-nav {
-                border: 1px solid #cfe0e0;
-                background: #ffffff;
-                color: #365050;
-                padding: 8px 12px;
-                font-size: .85rem;
-                font-weight: 800;
-                border-radius: 8px;
-                text-decoration: none;
-            }
-
-            .agenda-grid {
-                display: grid;
-                gap: 12px;
-                overflow-x: auto;
-                padding-bottom: 4px;
-            }
-
-            .agenda-grid--month {
-                grid-template-columns: repeat(7, minmax(120px, 1fr));
-            }
-
-            .agenda-grid--week {
-                grid-template-columns: repeat(7, minmax(150px, 1fr));
-            }
-
-            .agenda-grid--day {
-                grid-template-columns: 1fr;
-            }
-
-            .day-column {
-                min-height: 140px;
-                border: 1px solid #dbe7e7;
-                border-radius: 8px;
-                background: #fafdff;
-                padding: 12px;
-            }
-
-            .agenda-grid--week .day-column {
-                min-height: 440px;
-            }
-
-            .agenda-grid--day .day-column {
-                min-height: 520px;
-            }
-
-            .day-column.is-outside-month {
-                opacity: .45;
-            }
-
-            .day-column.is-today {
-                border-color: #ff6bb3;
-            }
-
-            .day-column.has-events {
-                border-color: #008f91;
-                background: #f0ffff;
-            }
-
-            .month-event-summary {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                border-radius: 999px;
-                background: #ccfeff;
-                color: #006b6d;
-                padding: 6px 10px;
-                font-size: .78rem;
-                font-weight: 900;
-            }
-
-            .month-event-summary::before {
-                content: "";
-                width: 8px;
-                height: 8px;
-                border-radius: 999px;
-                background: #008f91;
-                box-shadow: 0 0 0 2px #ffffff;
-            }
-
-            .event-item {
-                border-left: 5px solid var(--calendar-color, #008f91);
-                border-radius: 8px;
-                background: #ffffff;
-                padding: 10px;
-                box-shadow: 0 10px 24px rgba(13, 43, 43, .07);
-            }
-
-            .event-item + .event-item {
-                margin-top: 10px;
-            }
-
-            .event-item.is-cancelled {
-                opacity: .62;
-                background: #f7f7f7;
-            }
-
-            .status-pill {
-                display: inline-flex;
-                align-items: center;
-                border-radius: 999px;
-                padding: 3px 8px;
-                background: #e5ffff;
-                color: #006b6d;
-                font-size: .72rem;
-                font-weight: 900;
-            }
-
-            .status-pill.is-high {
-                background: #fff1f7;
-                color: #b42369;
-            }
-
-            .dashboard-list-event {
-                display: grid;
-                grid-template-columns: 150px minmax(0, 1fr) auto;
-                gap: 14px;
-                align-items: center;
-                padding: 14px 0;
-                border-bottom: 1px solid #dbe7e7;
-            }
-
-            .smart-feedback {
-                display: none;
-                border-radius: 8px;
-                border: 1px solid #b8eeee;
-                background: #e5ffff;
-                padding: 12px;
-                color: #0d2b2b;
-                font-weight: 700;
-            }
-
-            .smart-feedback.is-visible {
-                display: block;
-            }
-
-            @media (max-width: 1100px) {
-                .dashboard-shell {
-                    grid-template-columns: 1fr;
-                }
-
-                .dashboard-sidebar {
-                    position: static;
-                    height: auto;
-                }
-
-                .dashboard-topbar {
-                    grid-template-columns: 1fr;
-                }
-
-                .agenda-grid--month,
-                .agenda-grid--week {
-                    grid-template-columns: repeat(7, minmax(130px, 1fr));
-                }
-
-                .dashboard-list-event {
-                    grid-template-columns: 1fr;
-                }
-            }
-        </style>
+        @vite(['resources/css/dashboard.css', 'resources/js/dashboard.js'])
 
         <div class="dashboard-shell">
             <aside class="dashboard-sidebar dashboard-card">
                 <div class="mb-6">
                     <p class="text-xs font-black uppercase tracking-[.22em] text-[#008f91]">Menu</p>
-                    <h2 class="mt-1 text-xl font-black text-[#0d2b2b]">Agenda Inteligente</h2>
+                    <h2 class="mt-1 text-xl font-black text-[#0d2b2b]">Agenda</h2>
                 </div>
 
                 <nav class="space-y-1">
@@ -397,10 +93,6 @@
                     </a>
                     <a href="{{ route('user-preferences.index') }}" class="sidebar-link">
                         <span>Prefer&ecirc;ncias</span>
-                        <span>&rsaquo;</span>
-                    </a>
-                    <a href="{{ route('event-reminder-tester') }}" class="sidebar-link">
-                        <span>Lembretes</span>
                         <span>&rsaquo;</span>
                     </a>
                     <a href="{{ route('profile.edit') }}" class="sidebar-link">
@@ -609,7 +301,7 @@
                         </div>
 
                         <div class="space-y-3">
-                            @forelse ($eventReminders as $reminder)
+                            @foreach ($eventReminders as $reminder)
                                 @php
                                     $reminderType = $reminder->type instanceof BackedEnum ? $reminder->type->value : $reminder->type;
                                     $notificationAt = $reminder->event?->startAt?->copy()->subMinutes($reminder->minutesBefore);
@@ -631,7 +323,7 @@
                                             </p>
                                         </div>
                                         <span class="status-pill {{ $reminder->isSent ? '' : 'is-high' }}">
-                                            {{ $reminder->isSent ? 'Enviado' : 'Pendente' }}
+                                            {{ $reminder->isSent ? 'Concluído' : 'Pendente' }}
                                         </span>
                                     </div>
 
@@ -646,117 +338,18 @@
                                         </span>
                                     </div>
                                 </a>
-                            @empty
+                            @endforeach
+                            @if ($eventReminders->isEmpty())
                                 <div class="rounded-lg border border-dashed border-[#cfe0e0] p-4 text-sm font-semibold text-gray-500">
                                     Nenhum lembrete configurado para seus eventos.
                                 </div>
-                            @endforelse
+                            @endif
                         </div>
                     </div>
                 </section>
             </main>
         </div>
-
-        <script>
-            const smartRequestStoreUrl = '/api/smart-requests';
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-
-            document.getElementById('smartCommandForm')?.addEventListener('submit', async (event) => {
-                event.preventDefault();
-
-                const input = document.getElementById('smartCommandInput');
-                const feedback = document.getElementById('smartCommandFeedback');
-                const rawText = input.value.trim();
-
-                if (rawText.length < 5) {
-                    feedback.className = 'smart-feedback is-visible';
-                    feedback.textContent = 'Digite uma solicitacao com pelo menos 5 caracteres.';
-                    return;
-                }
-
-                feedback.className = 'smart-feedback is-visible';
-                feedback.textContent = 'Analisando sua solicitacao...';
-
-                try {
-                    const response = await fetch(smartRequestStoreUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                        },
-                        body: JSON.stringify({ rawText }),
-                    });
-
-                    const payload = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(payload.message || 'Nao foi possivel registrar a solicitacao.');
-                    }
-
-                    const request = payload.data || payload;
-                    const status = request.status || 'pending';
-                    const needsConfirmation = status === 'needs_confirmation';
-                    const suggestingTimes = status === 'suggesting_times';
-
-                    feedback.innerHTML = `
-                        <div>${needsConfirmation ? 'Encontrei dados suficientes. Deseja confirmar este evento?' : suggestingTimes ? 'Encontrei um conflito. Veja sugest&otilde;es de hor&aacute;rios alternativos.' : 'Solicita&ccedil;&atilde;o registrada para an&aacute;lise.'}</div>
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            ${needsConfirmation ? `<button type="button" class="eos-action eos-action--primary" data-confirm-request="${request.id}">Confirmar</button>` : ''}
-                            <a class="eos-action eos-action--secondary" href="{{ route('smart-requests.index') }}">Editar</a>
-                            <a class="eos-action eos-action--secondary" href="{{ route('smart-requests.index') }}">Ver sugest&otilde;es</a>
-                        </div>
-                    `;
-
-                    input.value = '';
-                } catch (error) {
-                    feedback.className = 'smart-feedback is-visible';
-                    feedback.textContent = error.message;
-                }
-            });
-
-            document.addEventListener('click', async (event) => {
-                const button = event.target.closest('[data-confirm-request]');
-
-                if (!button) {
-                    return;
-                }
-
-                button.disabled = true;
-                button.textContent = 'Confirmando...';
-
-                try {
-                    const response = await fetch(`/api/smart-requests/${button.dataset.confirmRequest}/confirm`, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                        },
-                    });
-
-                    if (!response.ok) {
-                        const payload = await response.json();
-                        throw new Error(payload.message || 'Nao foi possivel confirmar.');
-                    }
-
-                    button.textContent = 'Confirmado';
-                    window.setTimeout(() => window.location.reload(), 800);
-                } catch (error) {
-                    button.disabled = false;
-                    button.textContent = 'Confirmar';
-                    document.getElementById('smartCommandFeedback').textContent = error.message;
-                }
-            });
-
-            document.getElementById('dashboardSearch')?.addEventListener('input', (event) => {
-                const query = event.target.value.trim().toLowerCase();
-
-                document.querySelectorAll('.js-searchable').forEach((item) => {
-                    const content = item.dataset.search || item.textContent.toLowerCase();
-                    item.hidden = query.length > 0 && !content.includes(query);
-                });
-            });
-        </script>
     </div>
 </x-app-layout>
+
+
