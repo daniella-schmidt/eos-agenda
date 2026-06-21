@@ -300,50 +300,10 @@
                             </div>
                         </div>
 
-                        <div class="space-y-3">
-                            @foreach ($eventReminders as $reminder)
-                                @php
-                                    $reminderType = $reminder->type instanceof BackedEnum ? $reminder->type->value : $reminder->type;
-                                    $notificationAt = $reminder->event?->startAt?->copy()->subMinutes($reminder->minutesBefore);
-                                    $reminderTypeLabels = [
-                                        'notification' => 'Notifica&ccedil;&atilde;o',
-                                        'email' => 'E-mail',
-                                        'whatsapp' => 'WhatsApp',
-                                    ];
-                                @endphp
-
-                                <a href="{{ route('event-reminder-tester') }}" class="block rounded-lg border border-[#dbe7e7] p-3 transition hover:border-[#008f91] hover:bg-[#fafdff]">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <p class="truncate text-sm font-black text-[#0d2b2b]">
-                                                {{ $reminder->event?->title ?? 'Evento sem t&iacute;tulo' }}
-                                            </p>
-                                            <p class="mt-1 truncate text-xs font-bold text-gray-500">
-                                                {{ $reminder->event?->calendar?->name ?? 'Sem calend&aacute;rio' }}
-                                            </p>
-                                        </div>
-                                        <span class="status-pill {{ $reminder->isSent ? '' : 'is-high' }}">
-                                            {{ $reminder->isSent ? 'Concluído' : 'Pendente' }}
-                                        </span>
-                                    </div>
-
-                                    <div class="mt-3 grid gap-1 text-xs font-bold text-gray-500">
-                                        <span>
-                                            Avisar {{ $reminder->minutesBefore }} min antes
-                                        </span>
-                                        <span>
-                                            {{ $notificationAt?->format('d/m H:i') ?? '-' }}
-                                            &middot;
-                                            {!! $reminderTypeLabels[$reminderType] ?? $reminderType !!}
-                                        </span>
-                                    </div>
-                                </a>
-                            @endforeach
-                            @if ($eventReminders->isEmpty())
-                                <div class="rounded-lg border border-dashed border-[#cfe0e0] p-4 text-sm font-semibold text-gray-500">
-                                    Nenhum lembrete configurado para seus eventos.
-                                </div>
-                            @endif
+                        <div id="upcomingRemindersContainer" class="space-y-3">
+                            <div class="rounded-lg border border-dashed border-[#cfe0e0] p-4 text-sm font-semibold text-gray-500">
+                                Carregando lembretes...
+                            </div>
                         </div>
                     </div>
                 </section>

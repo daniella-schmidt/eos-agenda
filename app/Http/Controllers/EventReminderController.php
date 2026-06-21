@@ -17,10 +17,25 @@ use App\Services\EventReminder\UpdateEventReminderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class EventReminderController extends Controller
 {
+    public function upcoming(): AnonymousResourceCollection
+    {
+        $reminders = EventReminder::query()
+            ->whereHas('event', function ($query) {
+                $query->where('userId', Auth::id())
+                      ->where('startAt', '>=', now());
+            })
+            ->with('event.calendar')
+            ->orderBy('minutesBefore')
+            ->get();
+
+        return EventReminderResource::collection($reminders);
+    }
+
     public function index(Event $event): AnonymousResourceCollection
     {
         Gate::authorize('view', $event);

@@ -239,6 +239,7 @@
                                                 @empty
                                                     <div class="empty-state">Sem eventos.</div>
                                                 @endforelse
+                                                @endif
                                             @endif
                                         </div>
 

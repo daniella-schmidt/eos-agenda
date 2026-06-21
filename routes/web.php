@@ -211,6 +211,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/event-participants/{eventParticipant}', [EventParticipantController::class, 'destroy'])
             ->name('event-participants.destroy');
 
+        Route::get('/event-reminders/upcoming', [EventReminderController::class, 'upcoming'])
+            ->name('event-reminders.upcoming');
+
         Route::get('/events/{event}/reminders', [EventReminderController::class, 'index'])
             ->name('event-reminders.index');
 

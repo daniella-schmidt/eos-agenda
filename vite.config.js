@@ -14,6 +14,9 @@ export default defineConfig({
                 'resources/js/calendars.js',
                 'resources/js/smart-requests.js',
                 'resources/js/event-reminders.js',
+                'resources/js/dashboard.js',
+                'resources/css/dashboard.css',
+                'resources/css/landing.css',
 
             ],
             refresh: true,
